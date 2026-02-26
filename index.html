@@ -2,24 +2,31 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Compteur Live</title>
+<title>Compteur LED Live</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
 body {
   margin: 0;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: #000;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  font-family: Arial, sans-serif;
-  color: white;
+  font-family: 'Orbitron', monospace;
+  color: #0f0;
+  overflow: hidden;
 }
 
 #compteur {
-  font-size: 150px;
+  font-size: 200px;
   font-weight: bold;
   text-align: center;
-  cursor: pointer;
+  text-shadow:
+    0 0 5px #0f0,
+    0 0 10px #0f0,
+    0 0 20px #0f0,
+    0 0 40px #0f0;
   user-select: none;
 }
 </style>
@@ -30,7 +37,7 @@ body {
 </head>
 <body>
 
-<div id="compteur" contenteditable="true">0</div>
+<div id="compteur">0</div>
 
 <script>
 // 🔹 Firebase config
@@ -48,23 +55,28 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// Référence à la valeur du compteur
+// Référence compteur
 const compteurRef = database.ref('compteur');
 
-// Affichage du compteur en temps réel
+// Affichage du compteur en temps réel (lecture seule)
+const compteurDiv = document.getElementById('compteur');
 compteurRef.on('value', (snapshot) => {
   const val = snapshot.val() || 0;
-  const div = document.getElementById('compteur');
-  if (div.innerText != val) div.innerText = val;
+  compteurDiv.innerText = val;
 });
 
-// Modifier directement le chiffre
-document.getElementById('compteur').addEventListener('input', (e) => {
-  const val = parseInt(e.target.innerText);
-  if (!isNaN(val)) {
-    compteurRef.set(val);
-  }
-});
+// 🔹 Supprimer toute possibilité de modification directe
+compteurDiv.contentEditable = false;
+
+// 🔹 Simulation automatique de lecture pour effet “lecture seule”
+setInterval(async () => {
+  // On récupère la valeur réelle dans Firebase
+  const snapshot = await compteurRef.get();
+  const val = snapshot.val() || 0;
+
+  // On met à jour le div automatiquement
+  compteurDiv.innerText = val;
+}, 1000); // toutes les secondes
 </script>
 
 </body>

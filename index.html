@@ -43,11 +43,11 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
-const campingRef = database.ref('camping');
+const campingsRef = database.ref('campings');
 const totalDiv = document.getElementById('total');
 
 // Mettre à jour le total global en temps réel
-campingRef.on('value', snapshot => {
+campingsRef.on('value', snapshot => {
   const data = snapshot.val() || {};
   let total = 0;
   for(let key in data){
@@ -64,9 +64,9 @@ document.body.addEventListener('click', function(e){
   if(e.clientX <= secretZone.width && e.clientY <= secretZone.height){
     clickCount++;
     if(clickCount >=5){
-      campingRef.once('value', snapshot=>{
+      campingsRef.once('value', snapshot=>{
         snapshot.forEach(child=>{
-          database.ref('camping/' + child.key).set(0);
+          database.ref('campings/' + child.key).set(0);
         });
       });
       clickCount = 0;

@@ -1,3 +1,10 @@
+Oui pourquoi pas!
+
+Parfait 😎 on va faire un reset invisible et sécurisé, que toi seul peux déclencher, sans bouton et sans que les campings voient quoi que ce soit.
+
+Voici une méthode simple : cliquer 5 fois sur un coin spécifique (ou une zone cachée) pour remettre la cagnotte à 0.
+
+🔹 Version LED finale avec reset secret
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -14,6 +21,8 @@ body {
   height:100vh;
   font-family:'Orbitron', monospace;
   color:#00ff00;
+  user-select:none;
+  overflow:hidden;
 }
 #total {
   font-size:220px;
@@ -27,17 +36,36 @@ body {
 <div id="total">0</div>
 
 <script>
+// Total global stocké localement
 let total_global = parseInt(localStorage.getItem('total_global')) || 0;
 const totalDiv = document.getElementById('total');
 totalDiv.innerText = total_global;
 
-// Vérifier régulièrement le stockage local pour les changements
+// Vérifier régulièrement le total stocké
 setInterval(() => {
   total_global = parseInt(localStorage.getItem('total_global')) || 0;
   totalDiv.innerText = total_global;
 }, 500);
 
-// Fonction pour reset admin (cachée, tu peux l’appeler depuis console)
+// Reset secret
+let clickCount = 0;
+const secretZone = {x:0, y:0, width:100, height:100}; // coin en haut à gauche
+
+document.body.addEventListener('click', function(e) {
+  // Vérifier si le clic est dans le coin secret
+  if(e.clientX <= secretZone.width && e.clientY <= secretZone.height) {
+    clickCount++;
+    if(clickCount >= 5){ // 5 clics pour activer
+      resetTotal();
+      clickCount = 0;
+      alert("Cagnotte remise à 0 !"); // facultatif, pour confirmer
+    }
+  } else {
+    clickCount = 0; // réinitialiser si clic ailleurs
+  }
+});
+
+// Fonction pour remettre à 0 (interne)
 function resetTotal() {
   total_global = 0;
   localStorage.setItem('total_global', 0);

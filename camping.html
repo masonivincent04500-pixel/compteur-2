@@ -23,7 +23,7 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// Firebase configuration
+// Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -45,8 +45,8 @@ if(!campingId){
 }
 document.getElementById("titre").innerText = "Modifier la cagnotte - " + campingId;
 
-// Référence Firebase de ce camping
-const campingRef = database.ref('campings/' + campingId);
+// Référence Firebase pour ce camping
+const campingRef = database.ref('camping/' + campingId);
 
 let total_camping = 0;
 

@@ -4,52 +4,33 @@
 <meta charset="UTF-8">
 <title>Cagnotte Totale</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-body {
-  margin:0;
-  background:#000;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  font-family:'Orbitron', monospace;
-  color:#00ff00;
-}
-#total {
-  font-size:220px;
-  text-shadow:0 0 10px #00ff00,0 0 20px #00ff00,0 0 40px #00ff00;
-}
+body { background:black; color:#0f0; font-size:100px; text-align:center; font-family:Orbitron, monospace; }
+button { font-size:20px; margin-top:20px; }
 </style>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
+
 <div id="total">0</div>
+<button onclick="resetTotal()">Reset (admin)</button>
+
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-  authDomain: "compteur-million-2.firebaseapp.com",
-  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "compteur-million-2",
-  storageBucket: "compteur-million-2.firebasestorage.app",
-  messagingSenderId: "226299332536",
-  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
-};
-
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const campingsRef = database.ref('campings');
+let total_global = parseInt(localStorage.getItem('total_global')) || 0;
 const totalDiv = document.getElementById('total');
+totalDiv.innerText = total_global;
 
-campingsRef.on('value', snapshot => {
-  const data = snapshot.val() || {};
-  let total = 0;
-  for (let key in data) {
-    total += data[key];
-  }
-  totalDiv.innerText = total;
-  console.log("Total mis à jour :", total);
-});
+// Vérifier régulièrement le stockage local pour les changements
+setInterval(() => {
+  total_global = parseInt(localStorage.getItem('total_global')) || 0;
+  totalDiv.innerText = total_global;
+}, 500);
+
+// Reset (admin)
+function resetTotal() {
+  total_global = 0;
+  localStorage.setItem('total_global', 0);
+  totalDiv.innerText = 0;
+}
 </script>
+
 </body>
 </html>

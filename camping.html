@@ -8,6 +8,27 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 #total_personnel { font-size:30px; margin:10px; color:blue; }
 #last { font-size:20px; color:green; }
 </style>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
+  authDomain: "compteur-million-2.firebaseapp.com",
+  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "compteur-million-2",
+  storageBucket: "compteur-million-2.firebasestorage.app",
+  messagingSenderId: "226299332536",
+  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+window.db = db;
+</script>
+
 </head>
 <body>
 
@@ -19,37 +40,47 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 <div id="last">Dernière valeur ajoutée : 0</div>
 <div id="total_personnel">Total de ce camping : 0</div>
 
-<script>
+<script type="module">
+import { ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-database.js";
+
 // Récupérer l'ID camping depuis l'URL
 const params = new URLSearchParams(window.location.search);
 const campingId = params.get('id');
 document.getElementById('titre').innerText = "Cagnotte - " + campingId;
 
-// Variables locales
-let total_camping = 0;
-let total_global = 0;
+// Références Firebase
+const campingRef = ref(window.db, 'camping/' + campingId);
+const totalGlobalRef = ref(window.db, 'total_global');
 
-// Ajouter une valeur
-function ajouter() {
+const totalDivCamping = document.getElementById('total_personnel');
+const lastDiv = document.getElementById('last');
+
+let total_camping = 0;
+
+// Écouter les changements de ce camping
+onValue(campingRef, (snapshot) => {
+  total_camping = snapshot.val() || 0;
+  totalDivCamping.innerText = "Total de ce camping : " + total_camping;
+});
+
+// Ajouter un montant
+window.ajouter = function() {
   const valeur = parseInt(document.getElementById('montant').value);
   if (!isNaN(valeur)) {
     total_camping += valeur;
-    total_global += valeur;
+    set(campingRef, total_camping);
 
-    document.getElementById('total_personnel').innerText = "Total de ce camping : " + total_camping;
-    document.getElementById('last').innerText = "Dernière valeur ajoutée : " + valeur;
+    // Ajouter au total global
+    onValue(totalGlobalRef, (snapshot) => {
+      let total_global = snapshot.val() || 0;
+      total_global += valeur;
+      set(totalGlobalRef, total_global);
+    }, { onlyOnce: true });
 
-    // Actualiser le compteur total LED si ouvert dans un autre onglet
-    localStorage.setItem('total_global', total_global);
+    lastDiv.innerText = "Dernière valeur ajoutée : " + valeur;
+    document.getElementById('montant').value = "";
   }
 }
-
-// Mettre à jour le total global depuis localStorage si on ouvre plusieurs onglets
-window.addEventListener('storage', function(e) {
-  if (e.key === 'total_global') {
-    total_global = parseInt(e.newValue);
-  }
-});
 </script>
 
 </body>

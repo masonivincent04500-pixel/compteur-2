@@ -30,7 +30,6 @@ body {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -43,36 +42,17 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
-const campingsRef = database.ref('campings');  // <- bien campings
+const campingsRef = database.ref('campings');
 const totalDiv = document.getElementById('total');
 
+// Calculer le total en direct
 campingsRef.on('value', snapshot => {
-  const data = snapshot.val();
-  if(!data) return;  // pas de données
-
+  const data = snapshot.val() || {};
   let total = 0;
   Object.keys(data).forEach(key => {
-    total += Number(data[key]) || 0;  // <- conversion sécurisée
+    total += Number(data[key]) || 0;
   });
-
   totalDiv.innerText = total;
-});
-
-// Reset secret (clic 5 fois en haut à gauche)
-let clickCount = 0;
-document.body.addEventListener('click', function(e){
-  if(e.clientX <= 100 && e.clientY <= 100){
-    clickCount++;
-    if(clickCount >= 5){
-      campingsRef.once('value', snapshot => {
-        snapshot.forEach(child => {
-          database.ref('campings/' + child.key).set(0);
-        });
-      });
-      clickCount = 0;
-      alert("Cagnotte remise à 0 !");
-    }
-  } else clickCount = 0;
 });
 </script>
 

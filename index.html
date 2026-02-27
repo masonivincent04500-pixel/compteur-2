@@ -14,6 +14,8 @@ body {
   height:100vh;
   font-family:'Orbitron', monospace;
   color:#00ff00;
+  user-select:none;
+  overflow:hidden;
 }
 #total {
   font-size:220px;
@@ -26,34 +28,42 @@ body {
 
 <div id="total">0</div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-  authDomain: "compteur-million-2.firebaseapp.com",
-  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "compteur-million-2",
-  storageBucket: "compteur-million-2.firebasestorage.app",
-  messagingSenderId: "226299332536",
-  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
-};
-
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const campingsRef = database.ref('campings');
+// Total global stocké localement
+let total_global = parseInt(localStorage.getItem('total_global')) || 0;
 const totalDiv = document.getElementById('total');
+totalDiv.innerText = total_global;
 
-// Écoute toutes les valeurs de campings en direct
-campingsRef.on('value', snapshot => {
-  const data = snapshot.val() || {};
-  let total = 0;
-  Object.values(data).forEach(v => {
-    total += Number(v) || 0;
-  });
-  totalDiv.innerText = total;
+// Vérifier régulièrement le total stocké
+setInterval(() => {
+  total_global = parseInt(localStorage.getItem('total_global')) || 0;
+  totalDiv.innerText = total_global;
+}, 500);
+
+// Reset secret
+let clickCount = 0;
+const secretZone = {x:0, y:0, width:100, height:100}; // coin en haut à gauche
+
+document.body.addEventListener('click', function(e) {
+  // Vérifier si le clic est dans le coin secret
+  if(e.clientX <= secretZone.width && e.clientY <= secretZone.height) {
+    clickCount++;
+    if(clickCount >= 5){ // 5 clics pour activer
+      resetTotal();
+      clickCount = 0;
+      alert("Cagnotte remise à 0 !"); // facultatif, pour confirmer
+    }
+  } else {
+    clickCount = 0; // réinitialiser si clic ailleurs
+  }
 });
+
+// Fonction pour remettre à 0 (interne)
+function resetTotal() {
+  total_global = 0;
+  localStorage.setItem('total_global', 0);
+  totalDiv.innerText = 0;
+}
 </script>
 
 </body>

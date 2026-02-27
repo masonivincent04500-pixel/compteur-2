@@ -23,6 +23,7 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
+// Config Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -36,7 +37,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// Récupérer le camping depuis l'URL
+// Récupérer l'ID camping depuis l'URL
 const params = new URLSearchParams(window.location.search);
 const campingId = params.get('id');
 if(!campingId){
@@ -58,13 +59,23 @@ campingRef.on('value', snapshot => {
 // Ajouter un montant
 document.getElementById("btnAjouter").addEventListener("click", () => {
   const montant = parseInt(document.getElementById('montant').value);
-  if(!isNaN(montant) && montant > 0){
-    campingRef.transaction(current => (current || 0) + montant);
-    document.getElementById('last').innerText = "Dernière valeur ajoutée : " + montant;
-    document.getElementById('montant').value = "";
-  } else {
+  if(isNaN(montant) || montant <= 0){
     alert("Veuillez entrer un montant valide !");
+    return;
   }
+
+  // Transaction sécurisée pour créer ou mettre à jour la valeur
+  campingRef.transaction(current => {
+    if(current === null) return montant; // si la clé n’existe pas encore
+    return current + montant;
+  }, (err, committed, snapshot) => {
+    if(err) console.error("Erreur Firebase :", err);
+    else if(committed){
+      document.getElementById('last').innerText = "Dernière valeur ajoutée : " + montant;
+      document.getElementById('total_personnel').innerText = "Total de ce camping : " + snapshot.val();
+      document.getElementById('montant').value = "";
+    }
+  });
 });
 </script>
 

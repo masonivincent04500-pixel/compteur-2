@@ -2,29 +2,22 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Cagnotte Totale</title>
+<title>Modifier ma cagnotte</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-body {
-  margin:0;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  font-family:'Orbitron', monospace;
-  color:#00ff00;
-}
-#total {
-  font-size:220px;
-  text-shadow:0 0 10px #00ff00,0 0 20px #00ff00,0 0 40px #00ff00;
-  text-align:center;
-}
+body { font-family: Arial; text-align:center; margin-top:50px; }
+#total_personnel { font-size:30px; margin:10px; color:blue; }
+#last { font-size:20px; color:green; }
 </style>
 </head>
 <body>
 
-<div id="total">0</div>
+<h1 id="titre"></h1>
+
+<input type="number" id="montant" placeholder="Ajouter un montant">
+<button id="btnAjouter">Ajouter</button>
+
+<div id="last">Dernière valeur ajoutée : 0</div>
+<div id="total_personnel">Total de ce camping : 0</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -42,20 +35,36 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
-const campingsRef = database.ref('campings'); // <- doit correspondre au nœud exact
-const totalDiv = document.getElementById('total');
 
-campingsRef.on('value', snapshot => {
-  const data = snapshot.val();
-  if(!data) return;
+// Récupérer le camping depuis l'URL
+const params = new URLSearchParams(window.location.search);
+const campingId = params.get('id');
+if(!campingId){
+  alert("ID camping manquant !");
+  throw new Error("ID camping manquant !");
+}
 
-  let total = 0;
-  Object.keys(data).forEach(key => {
-    const valeur = Number(data[key]);   // <- conversion sûre
-    if(!isNaN(valeur)) total += valeur;
-  });
+document.getElementById("titre").innerText = "Modifier la cagnotte - " + campingId;
 
-  totalDiv.innerText = total;
+// Référence Firebase pour ce camping
+const campingRef = database.ref('campings/' + campingId);
+
+// Lire le total initial et en temps réel
+campingRef.on('value', snapshot => {
+  const total_camping = snapshot.val() || 0;
+  document.getElementById('total_personnel').innerText = "Total de ce camping : " + total_camping;
+});
+
+// Ajouter un montant
+document.getElementById("btnAjouter").addEventListener("click", () => {
+  const montant = parseInt(document.getElementById('montant').value);
+  if(!isNaN(montant) && montant > 0){
+    campingRef.transaction(current => (current || 0) + montant);
+    document.getElementById('last').innerText = "Dernière valeur ajoutée : " + montant;
+    document.getElementById('montant').value = "";
+  } else {
+    alert("Veuillez entrer un montant valide !");
+  }
 });
 </script>
 

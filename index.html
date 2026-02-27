@@ -43,41 +43,36 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
-const campingsRef = database.ref('campings');
-const totalDiv = document.getElementById('total');
-
-// Mettre à jour le total global en temps réel
-const campingsRef = database.ref('campings');
+const campingsRef = database.ref('campings');  // <- bien campings
 const totalDiv = document.getElementById('total');
 
 campingsRef.on('value', snapshot => {
-  const data = snapshot.val() || {};
+  const data = snapshot.val();
+  if(!data) return;  // pas de données
+
   let total = 0;
-  for(let key in data){
-    total += Number(data[key]);  // <- conversion obligatoire
-  }
+  Object.keys(data).forEach(key => {
+    total += Number(data[key]) || 0;  // <- conversion sécurisée
+  });
+
   totalDiv.innerText = total;
 });
 
 // Reset secret (clic 5 fois en haut à gauche)
 let clickCount = 0;
-const secretZone = {x:0, y:0, width:100, height:100};
-
 document.body.addEventListener('click', function(e){
-  if(e.clientX <= secretZone.width && e.clientY <= secretZone.height){
+  if(e.clientX <= 100 && e.clientY <= 100){
     clickCount++;
-    if(clickCount >=5){
-      campingsRef.once('value', snapshot=>{
-        snapshot.forEach(child=>{
+    if(clickCount >= 5){
+      campingsRef.once('value', snapshot => {
+        snapshot.forEach(child => {
           database.ref('campings/' + child.key).set(0);
         });
       });
       clickCount = 0;
       alert("Cagnotte remise à 0 !");
     }
-  } else {
-    clickCount = 0;
-  }
+  } else clickCount = 0;
 });
 </script>
 

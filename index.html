@@ -47,11 +47,14 @@ const campingsRef = database.ref('campings');
 const totalDiv = document.getElementById('total');
 
 // Mettre à jour le total global en temps réel
+const campingsRef = database.ref('campings');
+const totalDiv = document.getElementById('total');
+
 campingsRef.on('value', snapshot => {
   const data = snapshot.val() || {};
   let total = 0;
   for(let key in data){
-    total += data[key];
+    total += Number(data[key]);  // <- conversion obligatoire
   }
   totalDiv.innerText = total;
 });

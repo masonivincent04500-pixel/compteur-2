@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Modifier ma cagnotte</title>
+<title>Campings</title>
 <style>
 body { font-family: Arial; text-align:center; margin-top:50px; }
 #total_personnel { font-size:30px; margin:10px; color:blue; }
@@ -14,60 +14,41 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 <h1 id="titre"></h1>
 
 <input type="number" id="montant" placeholder="Ajouter un montant">
-<button id="btnAjouter">Ajouter</button>
+<button onclick="ajouter()">Ajouter</button>
 
 <div id="last">Dernière valeur ajoutée : 0</div>
 <div id="total_personnel">Total de ce camping : 0</div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-  authDomain: "compteur-million-2.firebaseapp.com",
-  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "compteur-million-2",
-  storageBucket: "compteur-million-2.firebasestorage.app",
-  messagingSenderId: "226299332536",
-  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
-};
-
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-
 // Récupérer l'ID camping depuis l'URL
 const params = new URLSearchParams(window.location.search);
 const campingId = params.get('id');
-if(!campingId){
-  alert("ID camping manquant !");
-  throw new Error("ID camping manquant !");
+document.getElementById('titre').innerText = "Cagnotte - " + campingId;
+
+// Variables locales
+let total_camping = 0;
+let total_global = 0;
+
+// Ajouter une valeur
+function ajouter() {
+  const valeur = parseInt(document.getElementById('montant').value);
+  if (!isNaN(valeur)) {
+    total_camping += valeur;
+    total_global += valeur;
+
+    document.getElementById('total_personnel').innerText = "Total de ce camping : " + total_camping;
+    document.getElementById('last').innerText = "Dernière valeur ajoutée : " + valeur;
+
+    // Actualiser le compteur total LED si ouvert dans un autre onglet
+    localStorage.setItem('total_global', total_global);
+  }
 }
 
-document.getElementById("titre").innerText = "Modifier la cagnotte - " + campingId;
-
-// Référence Firebase pour ce camping
-const campingRef = database.ref('campings/' + campingId);
-
-// Affichage en temps réel
-campingRef.on('value', snapshot => {
-  const total_camping = snapshot.val() || 0;
-  document.getElementById('total_personnel').innerText = "Total de ce camping : " + total_camping;
-});
-
-// Ajouter un montant
-document.getElementById("btnAjouter").addEventListener("click", () => {
-  const montant = parseInt(document.getElementById('montant').value);
-  if(isNaN(montant) || montant <= 0){
-    alert("Veuillez entrer un montant valide !");
-    return;
+// Mettre à jour le total global depuis localStorage si on ouvre plusieurs onglets
+window.addEventListener('storage', function(e) {
+  if (e.key === 'total_global') {
+    total_global = parseInt(e.newValue);
   }
-
-  // Met à jour le camping dans Firebase
-  campingRef.transaction(current => (current || 0) + montant);
-
-  document.getElementById('last').innerText = "Dernière valeur ajoutée : " + montant;
-  document.getElementById('montant').value = "";
 });
 </script>
 

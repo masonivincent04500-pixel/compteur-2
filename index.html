@@ -30,6 +30,7 @@ body {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
+// Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -42,17 +43,17 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
-const campingsRef = database.ref('campings');
+const campingsRef = database.ref('campings'); // Bien lire TOUTES les valeurs sous campings
 const totalDiv = document.getElementById('total');
 
-// Calculer le total en direct
+// Écouter les changements en direct
 campingsRef.on('value', snapshot => {
-  const data = snapshot.val() || {};
+  const data = snapshot.val() || {}; // récupère toutes les clés
   let total = 0;
   Object.keys(data).forEach(key => {
-    total += Number(data[key]) || 0;
+    total += Number(data[key]) || 0; // additionne chaque camping
   });
-  totalDiv.innerText = total;
+  totalDiv.innerText = total; // affiche le total
 });
 </script>
 

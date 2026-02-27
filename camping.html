@@ -14,7 +14,7 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 <h1 id="titre"></h1>
 
 <input type="number" id="montant" placeholder="Ajouter un montant">
-<button onclick="ajouter()">Ajouter</button>
+<button id="btnAjouter">Ajouter</button>
 
 <div id="last">Dernière valeur ajoutée : 0</div>
 <div id="total_personnel">Total de ce camping : 0</div>
@@ -40,9 +40,12 @@ const database = firebase.database();
 // Récupérer l'ID camping depuis l'URL
 const params = new URLSearchParams(window.location.search);
 const campingId = params.get('id');
+
 if(!campingId){
-  document.body.innerHTML = "ID camping manquant !";
+  alert("ID camping manquant !");
+  throw new Error("ID camping manquant !");
 }
+
 document.getElementById("titre").innerText = "Modifier la cagnotte - " + campingId;
 
 // Référence Firebase pour ce camping
@@ -57,9 +60,9 @@ campingRef.on('value', snapshot => {
 });
 
 // Ajouter une valeur
-function ajouter() {
+document.getElementById("btnAjouter").addEventListener("click", () => {
   const montant = parseInt(document.getElementById('montant').value);
-  if(!isNaN(montant)){
+  if(!isNaN(montant) && montant > 0){
     campingRef.transaction(current => {
       return (current || 0) + montant;
     }, (err, committed, snapshot) => {
@@ -70,8 +73,10 @@ function ajouter() {
         document.getElementById('montant').value = "";
       }
     });
+  } else {
+    alert("Veuillez entrer un montant valide !");
   }
-}
+});
 </script>
 
 </body>

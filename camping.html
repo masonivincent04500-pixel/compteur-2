@@ -23,7 +23,6 @@ body { font-family: Arial; text-align:center; margin-top:50px; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// Config Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -50,7 +49,7 @@ document.getElementById("titre").innerText = "Modifier la cagnotte - " + camping
 // Référence Firebase pour ce camping
 const campingRef = database.ref('campings/' + campingId);
 
-// Lire le total initial et en temps réel
+// Affichage en temps réel
 campingRef.on('value', snapshot => {
   const total_camping = snapshot.val() || 0;
   document.getElementById('total_personnel').innerText = "Total de ce camping : " + total_camping;
@@ -64,18 +63,11 @@ document.getElementById("btnAjouter").addEventListener("click", () => {
     return;
   }
 
-  // Transaction sécurisée pour créer ou mettre à jour la valeur
-  campingRef.transaction(current => {
-    if(current === null) return montant; // si la clé n’existe pas encore
-    return current + montant;
-  }, (err, committed, snapshot) => {
-    if(err) console.error("Erreur Firebase :", err);
-    else if(committed){
-      document.getElementById('last').innerText = "Dernière valeur ajoutée : " + montant;
-      document.getElementById('total_personnel').innerText = "Total de ce camping : " + snapshot.val();
-      document.getElementById('montant').value = "";
-    }
-  });
+  // Met à jour le camping dans Firebase
+  campingRef.transaction(current => (current || 0) + montant);
+
+  document.getElementById('last').innerText = "Dernière valeur ajoutée : " + montant;
+  document.getElementById('montant').value = "";
 });
 </script>
 

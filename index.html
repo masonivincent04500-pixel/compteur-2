@@ -4,14 +4,27 @@
 <meta charset="UTF-8">
 <title>Cagnotte Totale</title>
 <style>
-body { background:black; color:#0f0; font-size:100px; text-align:center; font-family:Orbitron, monospace; }
-button { font-size:20px; margin-top:20px; }
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+body {
+  margin:0;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:'Orbitron', monospace;
+  color:#00ff00;
+}
+#total {
+  font-size:220px;
+  text-shadow:0 0 10px #00ff00,0 0 20px #00ff00,0 0 40px #00ff00;
+  text-align:center;
+}
 </style>
 </head>
 <body>
 
 <div id="total">0</div>
-<button onclick="resetTotal()">Reset (admin)</button>
 
 <script>
 let total_global = parseInt(localStorage.getItem('total_global')) || 0;
@@ -24,7 +37,7 @@ setInterval(() => {
   totalDiv.innerText = total_global;
 }, 500);
 
-// Reset (admin)
+// Fonction pour reset admin (cachée, tu peux l’appeler depuis console)
 function resetTotal() {
   total_global = 0;
   localStorage.setItem('total_global', 0);

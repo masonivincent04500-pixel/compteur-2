@@ -3,38 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <title>Cagnotte Totale</title>
-
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-
 body {
-  margin: 0;
-  background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: 'Orbitron', monospace;
-  color: #00ff00;
+  margin:0;
+  background:#000;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:'Orbitron', monospace;
+  color:#00ff00;
 }
-
 #total {
-  font-size: 220px;
-  text-shadow:
-    0 0 10px #00ff00,
-    0 0 20px #00ff00,
-    0 0 40px #00ff00;
+  font-size:220px;
+  text-shadow:0 0 10px #00ff00,0 0 20px #00ff00,0 0 40px #00ff00;
 }
 </style>
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
-
 <body>
-
 <div id="total">0</div>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
@@ -49,20 +39,17 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 const campingsRef = database.ref('campings');
-
 const totalDiv = document.getElementById('total');
 
 campingsRef.on('value', snapshot => {
   const data = snapshot.val() || {};
   let total = 0;
-
   for (let key in data) {
     total += data[key];
   }
-
   totalDiv.innerText = total;
+  console.log("Total mis à jour :", total);
 });
 </script>
-
 </body>
 </html>

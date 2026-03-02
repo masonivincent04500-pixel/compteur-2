@@ -17,75 +17,73 @@ body {
   display:flex;
   justify-content:center;
   align-items:center;
-  background: linear-gradient(135deg, #1f2937, #111827);
-  color:white;
+  background:black;
+  overflow:hidden;
 }
 
-.card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(10px);
-  padding: 60px 100px;
-  border-radius: 25px;
+/* Effet écran LED */
+.led-container {
   text-align:center;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.15);
-  position: relative;
 }
 
 h1 {
-  font-size: 32px;
-  letter-spacing: 2px;
-  margin-bottom: 30px;
-  opacity: 0.8;
+  color:#444;
+  letter-spacing:4px;
+  margin-bottom:40px;
+  font-size:28px;
 }
 
+/* Chiffre LED */
 #total {
-  font-size: 90px;
-  font-weight: bold;
-  letter-spacing: 3px;
+  font-size:120px;
+  font-weight:bold;
+  color:#00ff55;
+  text-shadow:
+    0 0 5px #00ff55,
+    0 0 10px #00ff55,
+    0 0 20px #00ff55,
+    0 0 40px #00ff55;
   transition: transform 0.2s ease;
 }
 
-.grow {
-  transform: scale(1.1);
+/* Petit effet quand ça augmente */
+.flash {
+  transform: scale(1.08);
 }
 
-.subtitle {
-  margin-top: 20px;
-  font-size: 18px;
-  opacity: 0.6;
+/* Bouton admin caché */
+#adminPanel {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  display:none;
 }
 
-/* Bouton reset discret */
-.reset-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(255,255,255,0.15);
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
-  opacity: 0.6;
-  transition: opacity 0.2s ease, background 0.2s ease;
+#adminPanel button {
+  background:#222;
+  color:white;
+  border:1px solid #555;
+  padding:8px 15px;
+  border-radius:6px;
+  cursor:pointer;
+  opacity:0.7;
 }
 
-.reset-btn:hover {
-  opacity: 1;
-  background: rgba(255,255,255,0.25);
+#adminPanel button:hover {
+  opacity:1;
 }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <button class="reset-btn" onclick="resetTotal()">Remise à 0</button>
-
+<div class="led-container">
   <h1>CAGNOTTE GLOBALE</h1>
   <div id="total">0</div>
-  <div class="subtitle">Objectif : 1 000 000</div>
+</div>
+
+<!-- Panel admin caché -->
+<div id="adminPanel">
+  <button onclick="resetTotal()">Remise à 0</button>
 </div>
 
 <script type="module">
@@ -109,29 +107,34 @@ const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 
 const totalDiv = document.getElementById("total");
+const adminPanel = document.getElementById("adminPanel");
 
 let previousValue = 0;
 
+// Mise à jour temps réel
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
-
   totalDiv.innerText = value.toLocaleString("fr-FR");
 
   if (value > previousValue) {
-    totalDiv.classList.add("grow");
-    setTimeout(() => {
-      totalDiv.classList.remove("grow");
-    }, 200);
+    totalDiv.classList.add("flash");
+    setTimeout(() => totalDiv.classList.remove("flash"), 200);
   }
 
   previousValue = value;
 });
 
-// 🔥 RESET GLOBAL + tous les campings
+// Reset global + tous les campings
 window.resetTotal = function() {
   set(totalRef, 0);
-  set(campingRef, null); // remet tous les campings à zéro
+  set(campingRef, null);
 };
+
+// 🔒 Double clic pour afficher le mode admin
+document.addEventListener("dblclick", () => {
+  adminPanel.style.display =
+    adminPanel.style.display === "none" ? "block" : "none";
+});
 </script>
 
 </body>

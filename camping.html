@@ -5,30 +5,35 @@
 <title>Campings</title>
 
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
+* {
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: "Trebuchet MS", sans-serif;
+}
 
 body {
-  font-family: "Trebuchet MS", sans-serif;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
-  background: #f0f0f0;
+  transition: background 0.5s ease;
 }
 
+/* Encadré identique pour tous */
 .container {
-  padding: 40px 50px;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  background: white;
+  padding: 50px 60px;
+  border-radius: 20px;
+  box-shadow: 0 20px 45px rgba(0,0,0,0.25);
   text-align: center;
-  min-width: 350px;
-  color: white;
+  min-width: 400px;
 }
 
 h1 {
   margin-bottom: 30px;
-  font-size: 28px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  font-size: 30px;
+  color: #333;
 }
 
 input[type="number"] {
@@ -36,49 +41,43 @@ input[type="number"] {
   font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ccc;
-  width: 200px;
+  width: 220px;
   margin-right: 10px;
-  transition: border-color 0.2s;
-}
-
-input[type="number"]:focus {
-  border-color: #333;
-  outline: none;
 }
 
 button {
-  padding: 12px 20px;
+  padding: 12px 22px;
   font-size: 16px;
   border-radius: 8px;
   border: none;
-  background: rgba(0,0,0,0.3);
+  background: #333;
   color: white;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: transform 0.15s ease;
 }
 
 button:hover {
-  background: rgba(0,0,0,0.5);
   transform: scale(1.05);
 }
 
-#total_personnel {
-  font-size: 24px;
-  margin-top: 25px;
-  font-weight: bold;
+#last {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #666;
 }
 
-#last {
-  font-size: 18px;
-  margin-top: 15px;
-  color: #e0e0e0;
+#total_personnel {
+  margin-top: 25px;
+  font-size: 26px;
+  font-weight: bold;
+  color: #111;
 }
 </style>
 </head>
 <body>
 
-<div class="container" id="container">
-  <h1 id="titre">Cagnotte</h1>
+<div class="container">
+  <h1 id="titre"></h1>
 
   <input type="number" id="montant" placeholder="Ajouter un montant">
   <button onclick="ajouter()">Ajouter</button>
@@ -91,7 +90,7 @@ button:hover {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔴 CONFIG FIREBASE */
+/* CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -105,14 +104,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Récupérer l'ID camping depuis l'URL
+// ID camping
 const params = new URLSearchParams(window.location.search);
 const campingId = params.get("id");
-document.getElementById("titre").innerText = "Cagnotte - " + campingId;
 
-const container = document.getElementById("container");
-
-// 🔹 Définir les couleurs par camping
+// 🎨 Couleurs (fond global)
 const colors = {
   trianon: "#0094d2",
   brunelles: "#a7b019",
@@ -128,33 +124,53 @@ const colors = {
   tourterelles: "#f4bf56"
 };
 
-// Appliquer la couleur correspondante au container
-if(colors[campingId]) {
-  container.style.background = colors[campingId];
+// 🏷 Noms affichés
+const names = {
+  trianon: "Le Trianon",
+  brunelles: "Les Brunelles",
+  cote_sauvage: "La Côte Sauvage",
+  pontaillac: "Pontaillac Plage",
+  medoc_plage: "Médoc Plage",
+  cote_rose: "La Côte des Roses",
+  tamaris: "Les Tamaris",
+  littoral: "Le Littoral",
+  vivier: "Le Vivier",
+  plage_sud: "Plage Sud",
+  navarosse: "Navarrosse Plage",
+  tourterelles: "Les Tourterelles"
+};
+
+// Appliquer couleur de fond globale
+if (colors[campingId]) {
+  document.body.style.background = colors[campingId];
 }
 
-// Références Firebase
+// Appliquer nom propre
+document.getElementById("titre").innerText =
+  "Cagnotte - " + (names[campingId] || campingId);
+
+// Firebase refs
 const campingRef = ref(db, "camping/" + campingId);
 const totalGlobalRef = ref(db, "total_global");
 
 const totalDivCamping = document.getElementById("total_personnel");
 const lastDiv = document.getElementById("last");
 
-// 🔹 Mise à jour temps réel du camping
+// Mise à jour temps réel
 onValue(campingRef, snapshot => {
-  totalDivCamping.innerText = "Total de ce camping : " + (snapshot.val() || 0);
+  totalDivCamping.innerText =
+    "Total de ce camping : " + (snapshot.val() || 0);
 });
 
-// 🔹 Mise à jour totale (reset synchronisé silencieux)
+// Reset synchronisé silencieux
 onValue(totalGlobalRef, snapshot => {
-  const totalGlobal = snapshot.val() || 0;
-  if (totalGlobal === 0) {
+  if ((snapshot.val() || 0) === 0) {
     runTransaction(campingRef, () => 0);
     lastDiv.innerText = "Dernière valeur ajoutée : 0";
   }
 });
 
-// 🔹 Ajouter un montant
+// Ajouter montant
 window.ajouter = function() {
   const valeur = parseInt(document.getElementById("montant").value);
   if (!isNaN(valeur) && valeur > 0) {

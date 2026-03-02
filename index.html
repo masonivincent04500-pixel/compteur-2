@@ -26,7 +26,6 @@ body {
   text-align:center;
 }
 
-/* Titre */
 h1 {
   color:#444;
   letter-spacing:4px;
@@ -36,27 +35,20 @@ h1 {
 
 /* Chiffre LED */
 #total {
-  font-size:180px;
+  font-size:180px; /* taille augmentée */
   font-weight:bold;
   color:#00ff55;
   text-shadow:
     0 0 5px #00ff55,
     0 0 10px #00ff55,
     0 0 20px #00ff55,
-    0 0 40px #00ff55,
-    0 0 80px rgba(0,255,85,0.4);
-  transition: transform 0.2s ease, text-shadow 0.2s ease;
+    0 0 40px #00ff55;
+  transition: transform 0.2s ease;
 }
 
 /* Petit effet quand ça augmente */
 .flash {
   transform: scale(1.08);
-  text-shadow:
-    0 0 10px #00ff55,
-    0 0 20px #00ff55,
-    0 0 40px #00ff55,
-    0 0 80px rgba(0,255,85,0.6),
-    0 0 120px rgba(0,255,85,0.4);
 }
 </style>
 </head>

@@ -50,28 +50,6 @@ h1 {
 .flash {
   transform: scale(1.08);
 }
-
-/* Bouton admin caché */
-#adminPanel {
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  display:none;
-}
-
-#adminPanel button {
-  background:#222;
-  color:white;
-  border:1px solid #555;
-  padding:8px 15px;
-  border-radius:6px;
-  cursor:pointer;
-  opacity:0.7;
-}
-
-#adminPanel button:hover {
-  opacity:1;
-}
 </style>
 </head>
 <body>
@@ -81,15 +59,11 @@ h1 {
   <div id="total">0</div>
 </div>
 
-<!-- Panel admin caché -->
-<div id="adminPanel">
-  <button onclick="resetTotal()">Remise à 0</button>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* 🔴 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -107,11 +81,10 @@ const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 
 const totalDiv = document.getElementById("total");
-const adminPanel = document.getElementById("adminPanel");
 
 let previousValue = 0;
 
-// Mise à jour temps réel
+// 🔥 Mise à jour temps réel
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
   totalDiv.innerText = value.toLocaleString("fr-FR");
@@ -124,16 +97,26 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-// Reset global + tous les campings
-window.resetTotal = function() {
-  set(totalRef, 0);
-  set(campingRef, null);
-};
+// 🔐 Code secret clavier pour reset invisible
+let secretCode = "";
+const password = "reset2026";
 
-// 🔒 Double clic pour afficher le mode admin
-document.addEventListener("dblclick", () => {
-  adminPanel.style.display =
-    adminPanel.style.display === "none" ? "block" : "none";
+document.addEventListener("keydown", (e) => {
+  secretCode += e.key.toLowerCase();
+
+  if (secretCode.length > password.length) {
+    secretCode = secretCode.slice(-password.length);
+  }
+
+  if (secretCode === password) {
+    // Reset total global
+    set(totalRef, 0);
+
+    // Reset tous les campings
+    set(campingRef, null);
+
+    secretCode = "";
+  }
 });
 </script>
 

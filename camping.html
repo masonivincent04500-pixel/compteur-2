@@ -5,7 +5,6 @@
 <title>Campings</title>
 
 <style>
-/* Reset simple */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
@@ -14,23 +13,22 @@ body {
   justify-content:center;
   align-items:center;
   height:100vh;
-  background: linear-gradient(135deg, #a1c4fd, #c2e9fb); /* fond doux */
+  background: #f0f0f0;
 }
 
 .container {
-  background: #ffffffdd; /* blanc légèrement transparent */
   padding: 40px 50px;
   border-radius: 15px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
   text-align: center;
   min-width: 350px;
+  color: white;
 }
 
 h1 {
   margin-bottom: 30px;
   font-size: 28px;
-  color: #333;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
 }
 
 input[type="number"] {
@@ -44,7 +42,7 @@ input[type="number"] {
 }
 
 input[type="number"]:focus {
-  border-color: #0077cc;
+  border-color: #333;
   outline: none;
 }
 
@@ -53,34 +51,33 @@ button {
   font-size: 16px;
   border-radius: 8px;
   border: none;
-  background: #0077cc;
+  background: rgba(0,0,0,0.3);
   color: white;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
 }
 
 button:hover {
-  background: #005fa3;
+  background: rgba(0,0,0,0.5);
   transform: scale(1.05);
 }
 
 #total_personnel {
   font-size: 24px;
   margin-top: 25px;
-  color: #0077cc;
   font-weight: bold;
 }
 
 #last {
   font-size: 18px;
   margin-top: 15px;
-  color: #28a745;
+  color: #e0e0e0;
 }
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="container">
   <h1 id="titre">Cagnotte</h1>
 
   <input type="number" id="montant" placeholder="Ajouter un montant">
@@ -113,6 +110,30 @@ const params = new URLSearchParams(window.location.search);
 const campingId = params.get("id");
 document.getElementById("titre").innerText = "Cagnotte - " + campingId;
 
+const container = document.getElementById("container");
+
+// 🔹 Définir les couleurs par camping
+const colors = {
+  trianon: "#0094d2",
+  brunelles: "#a7b019",
+  cote_sauvage: "#5d9967",
+  pontaillac: "#053779",
+  medoc_plage: "#79215e",
+  cote_rose: "#cb678b",
+  tamaris: "#d83d49",
+  littoral: "#e47e1a",
+  vivier: "#d59075",
+  plage_sud: "#d9c1a3",
+  navarosse: "#76b8b2",
+  tourterelles: "#f4bf56"
+};
+
+// Appliquer la couleur correspondante au container
+if(colors[campingId]) {
+  container.style.background = colors[campingId];
+}
+
+// Références Firebase
 const campingRef = ref(db, "camping/" + campingId);
 const totalGlobalRef = ref(db, "total_global");
 
@@ -124,10 +145,9 @@ onValue(campingRef, snapshot => {
   totalDivCamping.innerText = "Total de ce camping : " + (snapshot.val() || 0);
 });
 
-// 🔹 Mise à jour totale (pour reset synchronisé)
+// 🔹 Mise à jour totale (reset synchronisé silencieux)
 onValue(totalGlobalRef, snapshot => {
   const totalGlobal = snapshot.val() || 0;
-  // Si total global est remis à 0, reset du camping aussi
   if (totalGlobal === 0) {
     runTransaction(campingRef, () => 0);
     lastDiv.innerText = "Dernière valeur ajoutée : 0";

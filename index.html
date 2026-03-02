@@ -8,25 +8,57 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
 body {
-  margin: 0;
+  margin:0;
   background: linear-gradient(135deg, #1e3c72, #2a5298);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: 'Orbitron', monospace;
-  color: #00ff00;
-  user-select: none;
-  overflow: hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:'Orbitron', monospace;
+  color:#00ff00;
+  user-select:none;
+  overflow:hidden;
 }
 
 #total {
-  font-size: 220px;
+  font-size:220px;
   text-shadow: 0 0 10px #00ff00,
                0 0 20px #00ff00,
                0 0 40px #00ff00;
-  text-align: center;
+  text-align:center;
 }
+
+/* Animations */
+
+@keyframes flashSmall {
+  0% { transform: scale(1); color: #00ff00; }
+  50% { transform: scale(1.15); color: #00ccff; }
+  100% { transform: scale(1); color: #00ff00; }
+}
+
+@keyframes flashMedium {
+  0% { transform: scale(1); color: #00ff00; }
+  50% { transform: scale(1.25); color: #00ff88; }
+  100% { transform: scale(1); color: #00ff00; }
+}
+
+@keyframes flashBig {
+  0% { transform: scale(1); color: #00ff00; }
+  50% { transform: scale(1.35); color: #bb00ff; }
+  100% { transform: scale(1); color: #00ff00; }
+}
+
+@keyframes flashHuge {
+  0% { transform: scale(1); color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+  50% { transform: scale(1.5); color: #ff0000; text-shadow: 0 0 40px #ff0000; }
+  100% { transform: scale(1); color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+}
+
+.small { animation: flashSmall 0.6s ease; }
+.medium { animation: flashMedium 0.8s ease; }
+.big { animation: flashBig 1s ease; }
+.huge { animation: flashHuge 1.2s ease; }
+
 </style>
 </head>
 
@@ -38,6 +70,7 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* 🔥 TON CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -54,12 +87,56 @@ const totalRef = ref(db, "total_global");
 
 const totalDiv = document.getElementById("total");
 
-// Mise à jour en temps réel
+let lastValue = 0;
+
 onValue(totalRef, (snapshot) => {
-  totalDiv.innerText = snapshot.val() || 0;
+  const value = snapshot.val() || 0;
+  totalDiv.innerText = value;
+
+  // 🎉 1 000
+  if (value >= 1000 && lastValue < 1000) {
+    triggerAnimation("small");
+  }
+
+  // 🟢 10 000
+  if (value >= 10000 && lastValue < 10000) {
+    triggerAnimation("medium");
+  }
+
+  // 🟣 100 000
+  if (value >= 100000 && lastValue < 100000) {
+    triggerAnimation("big");
+  }
+
+  // 🔴 Tous les 100 000 jusqu'à 1 000 000
+  if (value >= 100000 && value < 1000000) {
+    const currentStep = Math.floor(value / 100000);
+    const lastStep = Math.floor(lastValue / 100000);
+
+    if (currentStep > lastStep) {
+      triggerAnimation("huge");
+    }
+  }
+
+  // 👑 1 000 000
+  if (value >= 1000000 && lastValue < 1000000) {
+    triggerAnimation("huge");
+    setTimeout(() => {
+      alert("🎉🎉🎉 OBJECTIF 1 000 000 ATTEINT !!! 🎉🎉🎉");
+    }, 300);
+  }
+
+  lastValue = value;
 });
 
-// Reset secret (5 clics coin haut gauche)
+function triggerAnimation(type) {
+  totalDiv.classList.add(type);
+  setTimeout(() => {
+    totalDiv.classList.remove(type);
+  }, 1200);
+}
+
+/* 🔐 Reset secret (5 clics coin haut gauche) */
 let clickCount = 0;
 
 document.body.addEventListener("click", (e) => {

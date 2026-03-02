@@ -21,11 +21,12 @@ body {
   overflow:hidden;
 }
 
-/* Effet écran LED */
+/* Conteneur LED */
 .led-container {
   text-align:center;
 }
 
+/* Titre */
 h1 {
   color:#444;
   letter-spacing:4px;
@@ -42,13 +43,33 @@ h1 {
     0 0 5px #00ff55,
     0 0 10px #00ff55,
     0 0 20px #00ff55,
-    0 0 40px #00ff55;
-  transition: transform 0.2s ease;
+    0 0 40px #00ff55,
+    0 0 80px rgba(0,255,85,0.4);
+  transition: transform 0.2s ease, text-shadow 0.2s ease;
 }
 
 /* Petit effet quand ça augmente */
 .flash {
   transform: scale(1.08);
+  text-shadow:
+    0 0 10px #00ff55,
+    0 0 20px #00ff55,
+    0 0 40px #00ff55,
+    0 0 80px rgba(0,255,85,0.6),
+    0 0 120px rgba(0,255,85,0.4);
+}
+
+/* Scintillement LED aléatoire */
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity:1;
+  }
+  20%, 24%, 55% {
+    opacity:0.8;
+  }
+}
+#total {
+  animation: flicker 1.5s infinite;
 }
 </style>
 </head>
@@ -63,7 +84,6 @@ h1 {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔴 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -81,9 +101,10 @@ const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 
 const totalDiv = document.getElementById("total");
+
 let previousValue = 0;
 
-// 🔥 Mise à jour temps réel
+// Mise à jour temps réel
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
   totalDiv.innerText = value.toLocaleString("fr-FR");
@@ -96,22 +117,17 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-// 🔐 Reset invisible : 5 clics coin haut gauche
+// Reset global + tous les campings via 5 clics coin haut gauche
 let clickCount = 0;
-const secretZone = { x:0, y:0, width:100, height:100 }; // coin en haut à gauche
-
-document.body.addEventListener("click", (e) => {
-  if(e.clientX <= secretZone.width && e.clientY <= secretZone.height){
+document.body.addEventListener("click",(e)=>{
+  if(e.clientX<100 && e.clientY<100){
     clickCount++;
-    if(clickCount >= 5){
-      // Reset total global + tous les campings
-      set(totalRef, 0);
+    if(clickCount>=5){
+      set(totalRef,0);
       set(campingRef, null);
-      clickCount = 0; // réinitialise le compteur
+      clickCount=0;
     }
-  } else {
-    clickCount = 0; // clic hors coin = réinitialisation
-  }
+  } else clickCount=0;
 });
 </script>
 

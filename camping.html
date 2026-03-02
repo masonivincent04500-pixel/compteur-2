@@ -23,27 +23,26 @@ body {
 }
 </style>
 
-<script type="module">
+<script type="module" defer>
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* 🔴 REMPLACE ICI PAR TON firebaseConfig */
 const firebaseConfig = {
-    apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-    authDomain: "compteur-million-2.firebaseapp.com",
-    databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "compteur-million-2",
-    storageBucket: "compteur-million-2.firebasestorage.app",
-    messagingSenderId: "226299332536",
-    appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
-  };
+  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
+  authDomain: "compteur-million-2.firebaseapp.com",
+  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "compteur-million-2",
+  storageBucket: "compteur-million-2.firebasestorage.app",
+  messagingSenderId: "226299332536",
+  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // Récupérer l'ID camping
 const params = new URLSearchParams(window.location.search);
-const campingId = params.get("id");
+const campingId = params.get("id") || "inconnu";
 
 document.getElementById("titre").innerText = "Cagnotte - " + campingId;
 
@@ -64,7 +63,6 @@ window.ajouter = function () {
 
   if (!isNaN(valeur) && valeur > 0) {
 
-    // Transaction sécurisée (évite conflits multi-utilisateurs)
     runTransaction(campingRef, (current) => {
       return (current || 0) + valeur;
     });

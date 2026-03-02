@@ -5,68 +5,90 @@
 <title>Campings</title>
 
 <style>
+/* Reset simple */
+* { margin:0; padding:0; box-sizing:border-box; }
+
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin: 50px auto;
-  max-width: 500px;
-  background: #f0f0f0;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  font-family: 'Arial', sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  background: linear-gradient(135deg, #a1c4fd, #c2e9fb); /* fond doux */
 }
 
-h1 { 
-  margin-bottom: 20px; 
-  color: #333; 
+.container {
+  background: #ffffffdd; /* blanc légèrement transparent */
+  padding: 40px 50px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  text-align: center;
+  min-width: 350px;
+}
+
+h1 {
+  margin-bottom: 30px;
+  font-size: 28px;
+  color: #333;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
 }
 
 input[type="number"] {
-  padding: 10px;
-  width: 200px;
+  padding: 12px 15px;
   font-size: 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #ccc;
+  width: 200px;
+  margin-right: 10px;
+  transition: border-color 0.2s;
+}
+
+input[type="number"]:focus {
+  border-color: #0077cc;
+  outline: none;
 }
 
 button {
-  padding: 10px 15px;
+  padding: 12px 20px;
   font-size: 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: none;
   background: #0077cc;
   color: white;
   cursor: pointer;
-  margin-left: 10px;
+  transition: background 0.2s, transform 0.1s;
 }
 
 button:hover {
   background: #005fa3;
+  transform: scale(1.05);
 }
 
 #total_personnel {
   font-size: 24px;
-  margin-top: 15px;
+  margin-top: 25px;
   color: #0077cc;
+  font-weight: bold;
 }
 
 #last {
   font-size: 18px;
-  margin-top: 10px;
-  color: green;
+  margin-top: 15px;
+  color: #28a745;
 }
-
 </style>
 </head>
 <body>
 
-<h1 id="titre"></h1>
+<div class="container">
+  <h1 id="titre">Cagnotte</h1>
 
-<input type="number" id="montant" placeholder="Ajouter un montant">
-<button onclick="ajouter()">Ajouter</button>
+  <input type="number" id="montant" placeholder="Ajouter un montant">
+  <button onclick="ajouter()">Ajouter</button>
 
-<div id="last">Dernière valeur ajoutée : 0</div>
-<div id="total_personnel">Total de ce camping : 0</div>
+  <div id="last">Dernière valeur ajoutée : 0</div>
+  <div id="total_personnel">Total de ce camping : 0</div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -116,16 +138,12 @@ onValue(totalGlobalRef, snapshot => {
 window.ajouter = function() {
   const valeur = parseInt(document.getElementById("montant").value);
   if (!isNaN(valeur) && valeur > 0) {
-    // Transaction sécurisée pour le camping
     runTransaction(campingRef, current => (current || 0) + valeur);
-    // Transaction sécurisée pour total global
     runTransaction(totalGlobalRef, current => (current || 0) + valeur);
-
     lastDiv.innerText = "Dernière valeur ajoutée : " + valeur;
     document.getElementById("montant").value = "";
   }
 };
-
 </script>
 
 </body>

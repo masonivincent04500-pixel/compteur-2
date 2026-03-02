@@ -81,7 +81,6 @@ const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 
 const totalDiv = document.getElementById("total");
-
 let previousValue = 0;
 
 // 🔥 Mise à jour temps réel
@@ -97,25 +96,21 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-// 🔐 Code secret clavier pour reset invisible
-let secretCode = "";
-const password = "reset2026";
+// 🔐 Reset invisible : 5 clics coin haut gauche
+let clickCount = 0;
+const secretZone = { x:0, y:0, width:100, height:100 }; // coin en haut à gauche
 
-document.addEventListener("keydown", (e) => {
-  secretCode += e.key.toLowerCase();
-
-  if (secretCode.length > password.length) {
-    secretCode = secretCode.slice(-password.length);
-  }
-
-  if (secretCode === password) {
-    // Reset total global
-    set(totalRef, 0);
-
-    // Reset tous les campings
-    set(campingRef, null);
-
-    secretCode = "";
+document.body.addEventListener("click", (e) => {
+  if(e.clientX <= secretZone.width && e.clientY <= secretZone.height){
+    clickCount++;
+    if(clickCount >= 5){
+      // Reset total global + tous les campings
+      set(totalRef, 0);
+      set(campingRef, null);
+      clickCount = 0; // réinitialise le compteur
+    }
+  } else {
+    clickCount = 0; // clic hors coin = réinitialisation
   }
 });
 </script>

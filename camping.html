@@ -6,27 +6,73 @@
 
 <style>
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   text-align: center;
-  margin-top: 50px;
+  margin: 50px auto;
+  max-width: 500px;
+  background: #f0f0f0;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+h1 { 
+  margin-bottom: 20px; 
+  color: #333; 
+}
+
+input[type="number"] {
+  padding: 10px;
+  width: 200px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 15px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background: #0077cc;
+  color: white;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+button:hover {
+  background: #005fa3;
 }
 
 #total_personnel {
-  font-size: 30px;
-  margin: 10px;
-  color: blue;
+  font-size: 24px;
+  margin-top: 15px;
+  color: #0077cc;
 }
 
 #last {
-  font-size: 20px;
+  font-size: 18px;
+  margin-top: 10px;
   color: green;
 }
-</style>
 
-<script type="module" defer>
+</style>
+</head>
+<body>
+
+<h1 id="titre"></h1>
+
+<input type="number" id="montant" placeholder="Ajouter un montant">
+<button onclick="ajouter()">Ajouter</button>
+
+<div id="last">Dernière valeur ajoutée : 0</div>
+<div id="total_personnel">Total de ce camping : 0</div>
+
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* 🔴 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -40,10 +86,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Récupérer l'ID camping
+// Récupérer l'ID camping depuis l'URL
 const params = new URLSearchParams(window.location.search);
-const campingId = params.get("id") || "inconnu";
-
+const campingId = params.get("id");
 document.getElementById("titre").innerText = "Cagnotte - " + campingId;
 
 const campingRef = ref(db, "camping/" + campingId);
@@ -52,41 +97,36 @@ const totalGlobalRef = ref(db, "total_global");
 const totalDivCamping = document.getElementById("total_personnel");
 const lastDiv = document.getElementById("last");
 
-// Mise à jour en temps réel du camping
-onValue(campingRef, (snapshot) => {
+// 🔹 Mise à jour temps réel du camping
+onValue(campingRef, snapshot => {
   totalDivCamping.innerText = "Total de ce camping : " + (snapshot.val() || 0);
 });
 
-// Ajouter un montant
-window.ajouter = function () {
+// 🔹 Mise à jour totale (pour reset synchronisé)
+onValue(totalGlobalRef, snapshot => {
+  const totalGlobal = snapshot.val() || 0;
+  // Si total global est remis à 0, reset du camping aussi
+  if (totalGlobal === 0) {
+    runTransaction(campingRef, () => 0);
+    lastDiv.innerText = "Dernière valeur ajoutée : 0";
+  }
+});
+
+// 🔹 Ajouter un montant
+window.ajouter = function() {
   const valeur = parseInt(document.getElementById("montant").value);
-
   if (!isNaN(valeur) && valeur > 0) {
-
-    runTransaction(campingRef, (current) => {
-      return (current || 0) + valeur;
-    });
-
-    runTransaction(totalGlobalRef, (current) => {
-      return (current || 0) + valeur;
-    });
+    // Transaction sécurisée pour le camping
+    runTransaction(campingRef, current => (current || 0) + valeur);
+    // Transaction sécurisée pour total global
+    runTransaction(totalGlobalRef, current => (current || 0) + valeur);
 
     lastDiv.innerText = "Dernière valeur ajoutée : " + valeur;
     document.getElementById("montant").value = "";
   }
 };
+
 </script>
-
-</head>
-<body>
-
-<h1 id="titre"></h1>
-
-<input type="number" id="montant" placeholder="Ajouter un montant">
-<button onclick="ajouter()">Ajouter</button>
-
-<div id="last">Dernière valeur ajoutée : 0</div>
-<div id="total_personnel">Total de ce camping : 0</div>
 
 </body>
 </html>

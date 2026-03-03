@@ -76,8 +76,9 @@ h1 {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* 🔴 REMPLACE AVEC TES INFOS FIREBASE */
 const firebaseConfig = {
   apiKey: "TA_CLE",
   authDomain: "TON_AUTH",
@@ -98,6 +99,7 @@ const totalDiv = document.getElementById("total");
 
 let previousValue = 0;
 
+// Animation du compteur
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
@@ -115,17 +117,25 @@ function animateCounter(start, end, duration = 800) {
   requestAnimationFrame(update);
 }
 
+// 🔥 Détection des paliers franchis
 function checkJackpot(previous, current) {
   const paliers = [1000, 10000, 100000, 1000000];
 
   paliers.forEach(palier => {
     if (previous < palier && current >= palier) {
+      // Reset animation si déjà active
+      totalDiv.classList.remove("jackpot");
+      void totalDiv.offsetWidth; // force relance
       totalDiv.classList.add("jackpot");
-      setTimeout(() => totalDiv.classList.remove("jackpot"), 3000);
+
+      setTimeout(() => {
+        totalDiv.classList.remove("jackpot");
+      }, 3000);
     }
   });
 }
 
+// 🔄 Mise à jour temps réel
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
 
@@ -140,6 +150,7 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
+// 🔐 Remise à zéro silencieuse (5 clics coin haut gauche)
 let clickCount = 0;
 document.body.addEventListener("click",(e)=>{
   if(e.clientX < 100 && e.clientY < 100){

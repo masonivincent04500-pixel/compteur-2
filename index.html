@@ -29,32 +29,46 @@ body {
 
 /* Titre discret */
 h1 {
-  color:#333;
-  letter-spacing:6px;
+  color:#2a2a2a;
+  letter-spacing:8px;
   margin-bottom:3vh;
   font-size:2vw;
 }
 
-/* Chiffre LED optimisé écran géant */
+/* Chiffre LED principal */
 #total {
-  font-size:18vw; /* adaptatif selon largeur écran */
+  font-size:18vw;
   font-weight:900;
   color:#00ff55;
   line-height:1;
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
   text-shadow:
-    0 0 8px #00ff55,
-    0 0 18px #00ff55,
-    0 0 35px rgba(0,255,85,0.6);
-  transition: transform 0.2s ease, text-shadow 0.2s ease;
+    0 0 10px #00ff55,
+    0 0 25px #00ff55,
+    0 0 50px rgba(0,255,85,0.7);
 }
 
-/* Effet quand ça augmente */
+/* Animation augmentation normale */
 .flash {
   transform: scale(1.05);
-  text-shadow:
-    0 0 12px #00ff55,
-    0 0 25px #00ff55,
-    0 0 50px rgba(0,255,85,0.8);
+}
+
+/* Animation PALIER IMPORTANT */
+.jackpot {
+  animation: jackpotPulse 1s ease-in-out 3;
+}
+
+@keyframes jackpotPulse {
+  0% { transform: scale(1); }
+  50% { 
+    transform: scale(1.12);
+    text-shadow:
+      0 0 20px #00ff55,
+      0 0 40px #00ff55,
+      0 0 80px #00ff55,
+      0 0 120px rgba(0,255,85,1);
+  }
+  100% { transform: scale(1); }
 }
 </style>
 </head>
@@ -89,20 +103,51 @@ const totalDiv = document.getElementById("total");
 
 let previousValue = 0;
 
+// Fonction animation compteur fluide
+function animateCounter(start, end, duration = 800) {
+  const range = end - start;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const currentValue = Math.floor(start + range * progress);
+
+    totalDiv.innerText = currentValue.toLocaleString("fr-FR");
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+// Vérification des paliers
+function checkJackpot(value) {
+  const paliers = [1000, 10000, 100000, 1000000];
+  if (paliers.includes(value)) {
+    totalDiv.classList.add("jackpot");
+    setTimeout(() => totalDiv.classList.remove("jackpot"), 3000);
+  }
+}
+
 // Mise à jour temps réel
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
-  totalDiv.innerText = value.toLocaleString("fr-FR");
+
+  animateCounter(previousValue, value);
 
   if (value > previousValue) {
     totalDiv.classList.add("flash");
     setTimeout(() => totalDiv.classList.remove("flash"), 200);
   }
 
+  checkJackpot(value);
   previousValue = value;
 });
 
-// Remise à zéro discrète : 5 clics coin haut gauche
+// Reset discret : 5 clics coin haut gauche
 let clickCount = 0;
 document.body.addEventListener("click",(e)=>{
   if(e.clientX < 100 && e.clientY < 100){

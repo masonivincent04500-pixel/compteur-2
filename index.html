@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Cagnotte Globale</title>
+
 <style>
 * {
   margin:0;
@@ -10,6 +11,7 @@
   box-sizing:border-box;
   font-family:"Trebuchet MS", sans-serif;
 }
+
 body {
   height:100vh;
   display:flex;
@@ -19,6 +21,7 @@ body {
   overflow:hidden;
   position:relative;
 }
+
 #total {
   font-size:18vw;
   font-weight:900;
@@ -29,9 +32,17 @@ body {
     0 0 10px #00ff55,
     0 0 25px #00ff55,
     0 0 50px rgba(0,255,85,0.7);
+  text-align:center;
 }
-.flash { transform: scale(1.05); }
-.jackpot { animation: jackpotPulse 1s ease-in-out 3; }
+
+.flash {
+  transform: scale(1.05);
+}
+
+.jackpot {
+  animation: jackpotPulse 1s ease-in-out 3;
+}
+
 @keyframes jackpotPulse {
   0% { transform: scale(1); }
   50% { 
@@ -44,15 +55,23 @@ body {
   }
   100% { transform: scale(1); }
 }
+
 /* Confettis */
 .confetti {
   position: absolute;
   width: 10px;
   height: 10px;
+  background-color: red;
   opacity: 0.9;
   pointer-events: none;
-  border-radius: 50%;
   z-index: 1000;
+  border-radius: 50%;
+  animation: fall 3s linear forwards;
+}
+
+@keyframes fall {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
 }
 </style>
 </head>
@@ -64,6 +83,7 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// 🔑 Configuration Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -76,6 +96,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 const totalDiv = document.getElementById("total");
@@ -86,6 +107,7 @@ let previousValue = 0;
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
+
   function update(currentTime) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
@@ -93,65 +115,50 @@ function animateCounter(start, end, duration = 800) {
     totalDiv.innerText = currentValue.toLocaleString("fr-FR");
     if(progress < 1) requestAnimationFrame(update);
   }
+
   requestAnimationFrame(update);
 }
 
-// Confettis explosifs
-function spawnConfettiCenter() {
-  const confettis=[];
-  for(let i=0;i<100;i++){
-    const c=document.createElement('div');
-    c.className='confetti';
-    c.style.left=(window.innerWidth/2)+'px';
-    c.style.top=(window.innerHeight/2)+'px';
-    c.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`;
-    document.body.appendChild(c);
-    confettis.push({el:c, angle:Math.random()*2*Math.PI, speed:Math.random()*10+5});
+// Confettis
+function spawnConfetti() {
+  for(let i=0;i<150;i++){
+    const confetti = document.createElement('div');
+    confetti.className='confetti';
+    confetti.style.left = Math.random()*window.innerWidth + 'px';
+    confetti.style.backgroundColor = `hsl(${Math.random()*360},100%,50%)`;
+    document.body.appendChild(confetti);
+    setTimeout(()=>document.body.removeChild(confetti),3000);
   }
-
-  let t=0;
-  const interval = setInterval(()=>{
-    t++;
-    confettis.forEach(c=>{
-      const dx=Math.cos(c.angle)*c.speed;
-      const dy=Math.sin(c.angle)*c.speed;
-      const left=parseFloat(c.el.style.left)+dx;
-      const top=parseFloat(c.el.style.top)+dy;
-      c.el.style.left=left+'px';
-      c.el.style.top=top+'px';
-      c.el.style.opacity=(1-t/60).toString();
-    });
-    if(t>=60){
-      confettis.forEach(c=>document.body.removeChild(c.el));
-      clearInterval(interval);
-    }
-  },250);
 }
 
-// Feux d’artifice simples
-function fireworks(duration=15000){
-  const canvas=document.createElement('canvas');
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
+// Feux d’artifice
+function fireworksOnce() {
+  const canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
   canvas.style.position='absolute';
   canvas.style.top='0';
   canvas.style.left='0';
   canvas.style.zIndex='999';
   document.body.appendChild(canvas);
-  const ctx=canvas.getContext('2d');
+  const ctx = canvas.getContext('2d');
 
-  const particles=[];
+  const particles = [];
   for(let i=0;i<50;i++){
-    particles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height/2,
-      dx:(Math.random()-0.5)*5, dy:(Math.random()-1.5)*5,
-      radius:Math.random()*3+2, color:`hsl(${Math.random()*360},100%,50%)`});
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height/2,
+      dx:(Math.random()-0.5)*5,
+      dy:(Math.random()-1.5)*5,
+      radius:Math.random()*3+2,
+      color:`hsl(${Math.random()*360},100%,50%)`
+    });
   }
 
   let t=0;
-  const interval=setInterval(()=>{
+  function animate(){
     t++;
-    ctx.fillStyle='rgba(0,0,0,0.1)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     particles.forEach(p=>{
       p.x+=p.dx; p.y+=p.dy;
       ctx.beginPath();
@@ -159,11 +166,21 @@ function fireworks(duration=15000){
       ctx.fillStyle=p.color;
       ctx.fill();
     });
-    if(t>duration/1000) {
-      clearInterval(interval);
-      document.body.removeChild(canvas);
-    }
-  },1000/30); // ~30fps
+    if(t<60) requestAnimationFrame(animate);
+    else document.body.removeChild(canvas);
+  }
+  animate();
+}
+
+// 🔔 Explosion toutes les secondes pendant 15s
+function celebration() {
+  let count = 0;
+  const interval = setInterval(()=>{
+    spawnConfetti();
+    fireworksOnce();
+    count++;
+    if(count>=15) clearInterval(interval);
+  },1000);
 }
 
 // Mise à jour temps réel
@@ -176,23 +193,13 @@ onValue(totalRef, snapshot=>{
     setTimeout(()=>totalDiv.classList.remove("flash"),200);
   }
 
-  // Jackpot 1 million
   if(value>=1000000 && previousValue<1000000){
     totalDiv.classList.add("jackpot");
-    const startTime = Date.now();
-    const duration = 15000;
-    const confettiTimer = setInterval(spawnConfettiCenter, 1000); // toutes les secondes
-    fireworks(duration);
-    const stop = setInterval(()=>{
-      if(Date.now()-startTime>=duration){
-        clearInterval(confettiTimer);
-        totalDiv.classList.remove("jackpot");
-        clearInterval(stop);
-      }
-    },500);
+    celebration();
+    setTimeout(()=>totalDiv.classList.remove("jackpot"),15000);
   }
 
-  previousValue=value;
+  previousValue = value;
 });
 
 // 🔴 Remise à 0 : 5 clics coin haut gauche
@@ -217,15 +224,15 @@ document.body.addEventListener("click",(e)=>{
     if(rightClickCount>=5){
       rightClickCount=0;
       get(totalRef).then(totalSnap=>{
-        const total=totalSnap.val()||0;
+        const total = totalSnap.val()||0;
         if(total<=0) return;
-        const percent=0.12+Math.random()*0.04;
-        const totalSubtract=Math.floor(total*percent);
-        const subtractPerCamping=Math.floor(totalSubtract/12);
+        const percent = 0.12 + Math.random()*0.04;
+        const totalSubtract = Math.floor(total*percent);
+        const subtractPerCamping = Math.floor(totalSubtract/12);
 
         get(campingRef).then(snapshot=>{
-          const campings=snapshot.val()||{};
-          const updates={};
+          const campings = snapshot.val()||{};
+          const updates = {};
           let newTotal=0;
           Object.keys(campings).forEach(key=>{
             const value=campings[key]||0;

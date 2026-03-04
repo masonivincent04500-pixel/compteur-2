@@ -27,12 +27,12 @@ body {
   font-weight:900;
   color:#00ff55;
   line-height:1;
-  transition: transform 0.3s ease, text-shadow 0.3s ease;
   text-align:center;
   text-shadow:
     0 0 10px #00ff55,
     0 0 25px #00ff55,
     0 0 50px rgba(0,255,85,0.7);
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
 }
 
 .flash {
@@ -55,23 +55,6 @@ body {
   }
   100% { transform: scale(1); }
 }
-
-/* Confettis */
-.confetti {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  opacity: 0.9;
-  pointer-events: none;
-  z-index: 1000;
-  animation: fall 3s linear forwards;
-}
-
-@keyframes fall {
-  0% { transform: translateY(0) rotate(0deg); }
-  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-}
 </style>
 </head>
 <body>
@@ -82,7 +65,7 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔑 Configuration Firebase
+// 🔑 Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -101,7 +84,7 @@ const campingRef = ref(db, "camping");
 const totalDiv = document.getElementById("total");
 let previousValue = 0;
 
-// Compteur fluide
+// Animation compteur fluide
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
@@ -117,19 +100,6 @@ function animateCounter(start, end, duration = 800) {
   requestAnimationFrame(update);
 }
 
-// Confettis
-function spawnConfetti() {
-  for(let i=0;i<150;i++){
-    const confetti = document.createElement('div');
-    confetti.className='confetti';
-    confetti.style.left = Math.random()*window.innerWidth + 'px';
-    confetti.style.top = '0px';
-    confetti.style.backgroundColor = `hsl(${Math.random()*360},100%,50%)`;
-    document.body.appendChild(confetti);
-    setTimeout(()=>document.body.removeChild(confetti),3000);
-  }
-}
-
 // Feux d’artifice depuis le bas
 function fireworksOnce() {
   const canvas = document.createElement('canvas');
@@ -142,7 +112,6 @@ function fireworksOnce() {
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
 
-  // Explosion part de bas vers le haut
   const particles = [];
   const baseY = window.innerHeight; // départ en bas
   for(let i=0;i<50;i++){
@@ -178,7 +147,6 @@ function fireworksOnce() {
 function celebration() {
   let count = 0;
   const interval = setInterval(()=>{
-    spawnConfetti();
     fireworksOnce();
     count++;
     if(count>=15) clearInterval(interval);

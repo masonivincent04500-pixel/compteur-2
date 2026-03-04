@@ -81,16 +81,16 @@ h1 {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-  authDomain: "compteur-million-2.firebaseapp.com",
-  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "compteur-million-2",
-  storageBucket: "compteur-million-2.firebasestorage.app",
-  messagingSenderId: "226299332536",
-  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
+  apiKey: "TA_CLE",
+  authDomain: "TON_AUTH",
+  databaseURL: "TA_DB",
+  projectId: "TON_PROJECT",
+  storageBucket: "TON_STORAGE",
+  messagingSenderId: "TON_ID",
+  appId: "TON_APP"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -112,12 +112,8 @@ function animateCounter(start, end, duration = 800) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const currentValue = Math.floor(start + range * progress);
-
     totalDiv.innerText = currentValue.toLocaleString("fr-FR");
-
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    }
+    if (progress < 1) requestAnimationFrame(update);
   }
 
   requestAnimationFrame(update);
@@ -147,18 +143,36 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-// Reset discret : 5 clics coin haut gauche
-let clickCount = 0;
-document.body.addEventListener("click",(e)=>{
+// 🔐 Reset discret : 5 clics coin haut gauche
+let clickCountLeft = 0;
+document.body.addEventListener("click", (e) => {
   if(e.clientX < 100 && e.clientY < 100){
-    clickCount++;
-    if(clickCount >= 5){
+    clickCountLeft++;
+    if(clickCountLeft >= 5){
       set(totalRef,0);
       set(campingRef, null);
-      clickCount = 0;
+      clickCountLeft = 0;
     }
   } else {
-    clickCount = 0;
+    clickCountLeft = 0;
+  }
+});
+
+// 🔐 Soustraction discrète : 5 clics coin haut droit
+let clickCountRight = 0;
+document.body.addEventListener("click", (e) => {
+  const width = window.innerWidth;
+  if(e.clientX > width - 100 && e.clientY < 100){
+    clickCountRight++;
+    if(clickCountRight >= 5){
+      const amount = parseInt(prompt("Montant à soustraire :"));
+      if(!isNaN(amount) && amount > 0){
+        runTransaction(totalRef, current => (current || 0) - amount);
+      }
+      clickCountRight = 0;
+    }
+  } else {
+    clickCountRight = 0;
   }
 });
 </script>

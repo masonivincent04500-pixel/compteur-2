@@ -5,42 +5,44 @@
 <title>Cagnotte Globale</title>
 
 <style>
+/* ===== RESET ===== */
 * {
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-family: "Trebuchet MS", sans-serif;
 }
 
+/* ===== BODY ===== */
 body {
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#000;
-  overflow:hidden;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
 }
 
-/* Conteneur principal */
+/* ===== CONTENEUR ===== */
 .led-container {
-  text-align:center;
-  width:100%;
+  text-align: center;
+  width: 100%;
 }
 
-/* Titre discret */
+/* ===== TITRE ===== */
 h1 {
-  color:#2a2a2a;
-  letter-spacing:8px;
-  margin-bottom:3vh;
-  font-size:2vw;
+  color: #2a2a2a;
+  letter-spacing: 8px;
+  margin-bottom: 3vh;
+  font-size: 2vw;
 }
 
-/* Chiffre LED principal */
+/* ===== COMPTEUR LED ===== */
 #total {
-  font-size:18vw;
-  font-weight:900;
-  color:#00ff55;
-  line-height:1;
+  font-size: 18vw;
+  font-weight: 900;
+  color: #00ff55;
+  line-height: 1;
   transition: transform 0.3s ease, text-shadow 0.3s ease;
   text-shadow:
     0 0 10px #00ff55,
@@ -48,19 +50,19 @@ h1 {
     0 0 50px rgba(0,255,85,0.7);
 }
 
-/* Animation augmentation normale */
+/* Effet augmentation */
 .flash {
   transform: scale(1.05);
 }
 
-/* Animation PALIER IMPORTANT */
+/* Effet palier important */
 .jackpot {
   animation: jackpotPulse 1s ease-in-out 3;
 }
 
 @keyframes jackpotPulse {
   0% { transform: scale(1); }
-  50% { 
+  50% {
     transform: scale(1.12);
     text-shadow:
       0 0 20px #00ff55,
@@ -83,14 +85,15 @@ h1 {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+/* ===== CONFIG FIREBASE ===== */
 const firebaseConfig = {
-  apiKey: "TA_CLE",
-  authDomain: "TON_AUTH",
-  databaseURL: "TA_DB",
-  projectId: "TON_PROJECT",
-  storageBucket: "TON_STORAGE",
-  messagingSenderId: "TON_ID",
-  appId: "TON_APP"
+  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
+  authDomain: "compteur-million-2.firebaseapp.com",
+  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "compteur-million-2",
+  storageBucket: "compteur-million-2.firebasestorage.app",
+  messagingSenderId: "226299332536",
+  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -103,7 +106,7 @@ const totalDiv = document.getElementById("total");
 
 let previousValue = 0;
 
-// Fonction animation compteur fluide
+/* ===== ANIMATION COMPTEUR ===== */
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
@@ -113,13 +116,14 @@ function animateCounter(start, end, duration = 800) {
     const progress = Math.min(elapsed / duration, 1);
     const currentValue = Math.floor(start + range * progress);
     totalDiv.innerText = currentValue.toLocaleString("fr-FR");
+
     if (progress < 1) requestAnimationFrame(update);
   }
 
   requestAnimationFrame(update);
 }
 
-// Vérification des paliers
+/* ===== PALIERS ===== */
 function checkJackpot(value) {
   const paliers = [1000, 10000, 100000, 1000000];
   if (paliers.includes(value)) {
@@ -128,7 +132,7 @@ function checkJackpot(value) {
   }
 }
 
-// Mise à jour temps réel
+/* ===== SYNCHRO TEMPS RÉEL ===== */
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
 
@@ -143,13 +147,14 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-// 🔐 Reset discret : 5 clics coin haut gauche
+/* ===== RESET DISCRET ===== */
+/* 5 clics coin haut gauche */
 let clickCountLeft = 0;
 document.body.addEventListener("click", (e) => {
-  if(e.clientX < 100 && e.clientY < 100){
+  if (e.clientX < 100 && e.clientY < 100) {
     clickCountLeft++;
-    if(clickCountLeft >= 5){
-      set(totalRef,0);
+    if (clickCountLeft >= 5) {
+      set(totalRef, 0);
       set(campingRef, null);
       clickCountLeft = 0;
     }
@@ -158,16 +163,20 @@ document.body.addEventListener("click", (e) => {
   }
 });
 
-// 🔐 Soustraction discrète : 5 clics coin haut droit
+/* ===== SOUSTRACTION DISCRÈTE ===== */
+/* 5 clics coin haut droit */
 let clickCountRight = 0;
 document.body.addEventListener("click", (e) => {
   const width = window.innerWidth;
-  if(e.clientX > width - 100 && e.clientY < 100){
+  if (e.clientX > width - 100 && e.clientY < 100) {
     clickCountRight++;
-    if(clickCountRight >= 5){
+    if (clickCountRight >= 5) {
       const amount = parseInt(prompt("Montant à soustraire :"));
-      if(!isNaN(amount) && amount > 0){
-        runTransaction(totalRef, current => (current || 0) - amount);
+      if (!isNaN(amount) && amount > 0) {
+        runTransaction(totalRef, current => {
+          const newValue = (current || 0) - amount;
+          return newValue < 0 ? 0 : newValue;
+        });
       }
       clickCountRight = 0;
     }
@@ -175,6 +184,10 @@ document.body.addEventListener("click", (e) => {
     clickCountRight = 0;
   }
 });
+</script>
+
+</body>
+</html>
 </script>
 
 </body>

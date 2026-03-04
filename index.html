@@ -5,44 +5,39 @@
 <title>Cagnotte Globale</title>
 
 <style>
-/* ===== RESET ===== */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
   font-family: "Trebuchet MS", sans-serif;
 }
 
-/* ===== BODY ===== */
 body {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #000;
-  overflow: hidden;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+  overflow:hidden;
 }
 
-/* ===== CONTENEUR ===== */
 .led-container {
-  text-align: center;
-  width: 100%;
+  text-align:center;
+  width:100%;
 }
 
-/* ===== TITRE ===== */
 h1 {
-  color: #2a2a2a;
-  letter-spacing: 8px;
-  margin-bottom: 3vh;
-  font-size: 2vw;
+  color:#2a2a2a;
+  letter-spacing:8px;
+  margin-bottom:3vh;
+  font-size:2vw;
 }
 
-/* ===== COMPTEUR LED ===== */
 #total {
-  font-size: 18vw;
-  font-weight: 900;
-  color: #00ff55;
-  line-height: 1;
+  font-size:18vw;
+  font-weight:900;
+  color:#00ff55;
+  line-height:1;
   transition: transform 0.3s ease, text-shadow 0.3s ease;
   text-shadow:
     0 0 10px #00ff55,
@@ -50,12 +45,10 @@ h1 {
     0 0 50px rgba(0,255,85,0.7);
 }
 
-/* Effet augmentation */
 .flash {
   transform: scale(1.05);
 }
 
-/* Effet palier important */
 .jackpot {
   animation: jackpotPulse 1s ease-in-out 3;
 }
@@ -85,7 +78,6 @@ h1 {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* ===== CONFIG FIREBASE ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -106,7 +98,7 @@ const totalDiv = document.getElementById("total");
 
 let previousValue = 0;
 
-/* ===== ANIMATION COMPTEUR ===== */
+/* Animation compteur */
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
@@ -116,14 +108,13 @@ function animateCounter(start, end, duration = 800) {
     const progress = Math.min(elapsed / duration, 1);
     const currentValue = Math.floor(start + range * progress);
     totalDiv.innerText = currentValue.toLocaleString("fr-FR");
-
     if (progress < 1) requestAnimationFrame(update);
   }
 
   requestAnimationFrame(update);
 }
 
-/* ===== PALIERS ===== */
+/* Paliers */
 function checkJackpot(value) {
   const paliers = [1000, 10000, 100000, 1000000];
   if (paliers.includes(value)) {
@@ -132,13 +123,13 @@ function checkJackpot(value) {
   }
 }
 
-/* ===== SYNCHRO TEMPS RÉEL ===== */
+/* Sync temps réel */
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
 
   animateCounter(previousValue, value);
 
-  if (value > previousValue) {
+  if (value !== previousValue) {
     totalDiv.classList.add("flash");
     setTimeout(() => totalDiv.classList.remove("flash"), 200);
   }
@@ -147,47 +138,41 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-/* ===== RESET DISCRET ===== */
-/* 5 clics coin haut gauche */
+/* RESET discret coin haut gauche */
 let clickCountLeft = 0;
-document.body.addEventListener("click", (e) => {
-  if (e.clientX < 100 && e.clientY < 100) {
+document.body.addEventListener("click",(e)=>{
+  if(e.clientX < 100 && e.clientY < 100){
     clickCountLeft++;
-    if (clickCountLeft >= 5) {
-      set(totalRef, 0);
-      set(campingRef, null);
+    if(clickCountLeft >= 5){
+      set(totalRef,0);
+      set(campingRef,null);
       clickCountLeft = 0;
     }
-  } else {
-    clickCountLeft = 0;
-  }
+  } else clickCountLeft = 0;
 });
 
-/* ===== SOUSTRACTION DISCRÈTE ===== */
-/* 5 clics coin haut droit */
+/* 🎲 Soustraction magique aléatoire */
 let clickCountRight = 0;
-document.body.addEventListener("click", (e) => {
+document.body.addEventListener("click",(e)=>{
   const width = window.innerWidth;
-  if (e.clientX > width - 100 && e.clientY < 100) {
+
+  if(e.clientX > width - 100 && e.clientY < 100){
     clickCountRight++;
-    if (clickCountRight >= 5) {
-      const amount = parseInt(prompt("Montant à soustraire :"));
-      if (!isNaN(amount) && amount > 0) {
-        runTransaction(totalRef, current => {
-          const newValue = (current || 0) - amount;
-          return newValue < 0 ? 0 : newValue;
-        });
-      }
+
+    if(clickCountRight >= 5){
+
+      const randomAmount = Math.floor(Math.random() * 500) + 1;
+
+      runTransaction(totalRef, current => {
+        const newValue = (current || 0) - randomAmount;
+        return newValue < 0 ? 0 : newValue;
+      });
+
       clickCountRight = 0;
     }
-  } else {
-    clickCountRight = 0;
-  }
-});
-</script>
 
-</body>
-</html>
+  } else clickCountRight = 0;
+});
 </script>
 
 </body>

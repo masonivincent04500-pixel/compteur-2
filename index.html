@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Cagnotte Globale</title>
+<title>Cagnotte</title>
 
 <style>
 * {
@@ -21,18 +21,7 @@ body {
   overflow:hidden;
 }
 
-.led-container {
-  text-align:center;
-  width:100%;
-}
-
-h1 {
-  color:#2a2a2a;
-  letter-spacing:8px;
-  margin-bottom:3vh;
-  font-size:2vw;
-}
-
+/* Compteur LED */
 #total {
   font-size:18vw;
   font-weight:900;
@@ -69,10 +58,7 @@ h1 {
 </head>
 <body>
 
-<div class="led-container">
-  <h1>CAGNOTTE GLOBALE</h1>
-  <div id="total">0</div>
-</div>
+<div id="total">0</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -123,7 +109,7 @@ function checkJackpot(value) {
   }
 }
 
-/* Sync temps réel */
+/* Synchronisation temps réel */
 onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
 
@@ -138,40 +124,40 @@ onValue(totalRef, snapshot => {
   previousValue = value;
 });
 
-/* RESET discret coin haut gauche */
-let clickCountLeft = 0;
+/* RESET discret (coin haut gauche) */
+let clickLeft = 0;
 document.body.addEventListener("click",(e)=>{
   if(e.clientX < 100 && e.clientY < 100){
-    clickCountLeft++;
-    if(clickCountLeft >= 5){
+    clickLeft++;
+    if(clickLeft >= 5){
       set(totalRef,0);
       set(campingRef,null);
-      clickCountLeft = 0;
+      clickLeft = 0;
     }
-  } else clickCountLeft = 0;
+  } else clickLeft = 0;
 });
 
-/* 🎲 Soustraction magique aléatoire */
-let clickCountRight = 0;
+/* 🎲 Soustraction magique aléatoire 100 → 2000 */
+let clickRight = 0;
 document.body.addEventListener("click",(e)=>{
   const width = window.innerWidth;
 
   if(e.clientX > width - 100 && e.clientY < 100){
-    clickCountRight++;
+    clickRight++;
 
-    if(clickCountRight >= 5){
+    if(clickRight >= 5){
 
-      const randomAmount = Math.floor(Math.random() * 500) + 1;
+      const randomAmount = Math.floor(Math.random() * (2000 - 100 + 1)) + 100;
 
       runTransaction(totalRef, current => {
         const newValue = (current || 0) - randomAmount;
         return newValue < 0 ? 0 : newValue;
       });
 
-      clickCountRight = 0;
+      clickRight = 0;
     }
 
-  } else clickCountRight = 0;
+  } else clickRight = 0;
 });
 </script>
 

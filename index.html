@@ -19,6 +19,7 @@ body {
   align-items:center;
   background:#000;
   overflow:hidden;
+  position:relative;
 }
 
 .led-container {
@@ -26,7 +27,6 @@ body {
   width:100%;
 }
 
-/* Chiffre LED principal */
 #total {
   font-size:18vw;
   font-weight:900;
@@ -39,12 +39,10 @@ body {
     0 0 50px rgba(0,255,85,0.7);
 }
 
-/* Animation augmentation normale */
 .flash {
   transform: scale(1.05);
 }
 
-/* Animation PALIER IMPORTANT */
 .jackpot {
   animation: jackpotPulse 1s ease-in-out 3;
 }
@@ -60,6 +58,24 @@ body {
       0 0 120px rgba(0,255,85,1);
   }
   100% { transform: scale(1); }
+}
+
+/* Confettis */
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 1000;
+  border-radius: 50%;
+  animation: fall 3s linear forwards;
+}
+
+@keyframes fall {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
 }
 </style>
 </head>
@@ -88,11 +104,10 @@ const db = getDatabase(app);
 
 const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
-
 const totalDiv = document.getElementById("total");
 let previousValue = 0;
 
-// Fonction animation compteur fluide
+// Animation compteur fluide
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
@@ -101,13 +116,65 @@ function animateCounter(start, end, duration = 800) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const currentValue = Math.floor(start + range * progress);
-
     totalDiv.innerText = currentValue.toLocaleString("fr-FR");
-
-    if (progress < 1) requestAnimationFrame(update);
+    if(progress < 1) requestAnimationFrame(update);
   }
 
   requestAnimationFrame(update);
+}
+
+// Confettis
+function spawnConfetti() {
+  for(let i=0;i<100;i++){
+    const confetti = document.createElement('div');
+    confetti.className='confetti';
+    confetti.style.left = Math.random()*window.innerWidth + 'px';
+    confetti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+    document.body.appendChild(confetti);
+    setTimeout(()=>document.body.removeChild(confetti), 3000);
+  }
+}
+
+// Feux d’artifice simple
+function fireworks() {
+  const canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.position='absolute';
+  canvas.style.top='0';
+  canvas.style.left='0';
+  canvas.style.zIndex='999';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  const particles = [];
+  for(let i=0;i<50;i++){
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height/2,
+      dx:(Math.random()-0.5)*5,
+      dy:(Math.random()-1.5)*5,
+      radius:Math.random()*3+2,
+      color:`hsl(${Math.random()*360},100%,50%)`
+    });
+  }
+
+  let t=0;
+  function animate(){
+    t+=1;
+    ctx.fillStyle='rgba(0,0,0,0.1)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x+=p.dx; p.y+=p.dy;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
+      ctx.fillStyle=p.color;
+      ctx.fill();
+    });
+    if(t<60) requestAnimationFrame(animate);
+    else document.body.removeChild(canvas);
+  }
+  animate();
 }
 
 // Mise à jour temps réel
@@ -115,61 +182,66 @@ onValue(totalRef, snapshot => {
   const value = snapshot.val() || 0;
   animateCounter(previousValue, value);
 
-  if (value > previousValue) {
+  if(value > previousValue){
     totalDiv.classList.add("flash");
-    setTimeout(() => totalDiv.classList.remove("flash"), 200);
+    setTimeout(()=>totalDiv.classList.remove("flash"),200);
+  }
+
+  // Jackpot 1 million
+  if(value >= 1000000 && previousValue < 1000000){
+    totalDiv.classList.add("jackpot");
+    spawnConfetti();
+    fireworks();
+    setTimeout(()=>totalDiv.classList.remove("jackpot"),5000);
   }
 
   previousValue = value;
 });
 
-// 🔴 Remise à 0 (5 clics coin haut gauche)
-let leftClickCount = 0;
-document.body.addEventListener("click", (e) => {
-  if(e.clientX < 100 && e.clientY < 100){
+// 🔴 Remise à 0 : 5 clics coin haut gauche
+let leftClickCount=0;
+document.body.addEventListener("click",(e)=>{
+  if(e.clientX<100 && e.clientY<100){
     leftClickCount++;
-    if(leftClickCount >= 5){
-      set(totalRef, 0);
-      set(campingRef, null);
-      leftClickCount = 0;
+    if(leftClickCount>=5){
+      set(totalRef,0);
+      set(campingRef,null);
+      leftClickCount=0;
     }
-  } else leftClickCount = 0;
+  } else leftClickCount=0;
 });
 
-// ⚡ Soustraction aléatoire 12-16% (5 clics coin haut droit)
-let rightClickCount = 0;
-document.body.addEventListener("click", (e) => {
+// ⚡ Soustraction aléatoire 12-16% : 5 clics coin haut droit
+let rightClickCount=0;
+document.body.addEventListener("click",(e)=>{
   const width = window.innerWidth;
-  if (e.clientX > width - 100 && e.clientY < 100) {
+  if(e.clientX>width-100 && e.clientY<100){
     rightClickCount++;
-    if (rightClickCount >= 5) {
-      rightClickCount = 0;
-      get(totalRef).then(totalSnap => {
-        const total = totalSnap.val() || 0;
-        if(total <= 0) return;
+    if(rightClickCount>=5){
+      rightClickCount=0;
+      get(totalRef).then(totalSnap=>{
+        const total = totalSnap.val()||0;
+        if(total<=0) return;
+        const percent = 0.12 + Math.random()*0.04;
+        const totalSubtract = Math.floor(total*percent);
+        const subtractPerCamping = Math.floor(totalSubtract/12);
 
-        const percent = 0.12 + Math.random() * 0.04; // 12 à 16%
-        const totalSubtract = Math.floor(total * percent);
-        const subtractPerCamping = Math.floor(totalSubtract / 12);
-
-        get(campingRef).then(snapshot => {
-          const campings = snapshot.val() || {};
+        get(campingRef).then(snapshot=>{
+          const campings = snapshot.val()||{};
           const updates = {};
-          let newTotal = 0;
-
-          Object.keys(campings).forEach(key => {
-            const value = campings[key] || 0;
-            const newValue = Math.max(0, value - subtractPerCamping);
-            updates[key] = newValue;
-            newTotal += newValue;
+          let newTotal=0;
+          Object.keys(campings).forEach(key=>{
+            const value=campings[key]||0;
+            const newValue = Math.max(0,value-subtractPerCamping);
+            updates[key]=newValue;
+            newTotal+=newValue;
           });
-
-          update(campingRef, updates);
-          set(totalRef, newTotal); // correction exacte
+          update(campingRef,updates);
+          set(totalRef,newTotal);
         });
       });
     }
-  } else rightClickCount = 0;
+  } else rightClickCount=0;
 });
 </script>
 

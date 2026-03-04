@@ -2,12 +2,17 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Cagnotte</title>
+<title>Cagnotte Globale</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:"Trebuchet MS",sans-serif;}
+* {
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Trebuchet MS", sans-serif;
+}
 
-body{
+body {
   height:100vh;
   display:flex;
   justify-content:center;
@@ -16,31 +21,58 @@ body{
   overflow:hidden;
 }
 
-#total{
+.led-container {
+  text-align:center;
+  width:100%;
+}
+
+/* Chiffre LED principal */
+#total {
   font-size:18vw;
   font-weight:900;
   color:#00ff55;
   line-height:1;
-  transition:transform .3s ease,text-shadow .3s ease;
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
   text-shadow:
     0 0 10px #00ff55,
     0 0 25px #00ff55,
-    0 0 50px rgba(0,255,85,.7);
+    0 0 50px rgba(0,255,85,0.7);
 }
 
-.flash{transform:scale(1.05);}
+/* Animation augmentation normale */
+.flash {
+  transform: scale(1.05);
+}
+
+/* Animation PALIER IMPORTANT */
+.jackpot {
+  animation: jackpotPulse 1s ease-in-out 3;
+}
+
+@keyframes jackpotPulse {
+  0% { transform: scale(1); }
+  50% { 
+    transform: scale(1.12);
+    text-shadow:
+      0 0 20px #00ff55,
+      0 0 40px #00ff55,
+      0 0 80px #00ff55,
+      0 0 120px rgba(0,255,85,1);
+  }
+  100% { transform: scale(1); }
+}
 </style>
 </head>
 <body>
 
-<div id="total">0</div>
+<div class="led-container">
+  <div id="total">0</div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set, runTransaction, get, update }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
   authDomain: "compteur-million-2.firebaseapp.com",
@@ -54,96 +86,90 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const totalRef = ref(db,"total_global");
-const campingRef = ref(db,"camping");
-const totalDiv = document.getElementById("total");
+const totalRef = ref(db, "total_global");
+const campingRef = ref(db, "camping");
 
+const totalDiv = document.getElementById("total");
 let previousValue = 0;
 
-/* Animation compteur */
-function animateCounter(start,end,duration=800){
-  const range=end-start;
-  const startTime=performance.now();
-  function updateFrame(currentTime){
-    const progress=Math.min((currentTime-startTime)/duration,1);
-    const value=Math.floor(start+range*progress);
-    totalDiv.innerText=value.toLocaleString("fr-FR");
-    if(progress<1) requestAnimationFrame(updateFrame);
+// Fonction animation compteur fluide
+function animateCounter(start, end, duration = 800) {
+  const range = end - start;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const currentValue = Math.floor(start + range * progress);
+
+    totalDiv.innerText = currentValue.toLocaleString("fr-FR");
+
+    if (progress < 1) requestAnimationFrame(update);
   }
-  requestAnimationFrame(updateFrame);
+
+  requestAnimationFrame(update);
 }
 
-/* Sync temps réel */
-onValue(totalRef,(snapshot)=>{
-  const value=snapshot.val()||0;
-  animateCounter(previousValue,value);
+// Mise à jour temps réel
+onValue(totalRef, snapshot => {
+  const value = snapshot.val() || 0;
+  animateCounter(previousValue, value);
 
-  if(value!==previousValue){
+  if (value > previousValue) {
     totalDiv.classList.add("flash");
-    setTimeout(()=>totalDiv.classList.remove("flash"),200);
+    setTimeout(() => totalDiv.classList.remove("flash"), 200);
   }
 
-  previousValue=value;
+  previousValue = value;
 });
 
-/* RESET discret (coin haut gauche) */
-let leftClick=0;
-document.body.addEventListener("click",(e)=>{
-  if(e.clientX<100 && e.clientY<100){
-    leftClick++;
-    if(leftClick>=5){
-      set(totalRef,0);
-      set(campingRef,null);
-      leftClick=0;
+// 🔴 Remise à 0 (5 clics coin haut gauche)
+let leftClickCount = 0;
+document.body.addEventListener("click", (e) => {
+  if(e.clientX < 100 && e.clientY < 100){
+    leftClickCount++;
+    if(leftClickCount >= 5){
+      set(totalRef, 0);
+      set(campingRef, null);
+      leftClickCount = 0;
     }
-  } else {
-    leftClick=0;
-  }
+  } else leftClickCount = 0;
 });
 
-/* 🎲 Soustraction proportionnelle équitable */
-let rightClick=0;
-document.body.addEventListener("click",(e)=>{
+// ⚡ Soustraction aléatoire 12-16% (5 clics coin haut droit)
+let rightClickCount = 0;
+document.body.addEventListener("click", (e) => {
+  const width = window.innerWidth;
+  if (e.clientX > width - 100 && e.clientY < 100) {
+    rightClickCount++;
+    if (rightClickCount >= 5) {
+      rightClickCount = 0;
+      get(totalRef).then(totalSnap => {
+        const total = totalSnap.val() || 0;
+        if(total <= 0) return;
 
-  const width=window.innerWidth;
+        const percent = 0.12 + Math.random() * 0.04; // 12 à 16%
+        const totalSubtract = Math.floor(total * percent);
+        const subtractPerCamping = Math.floor(totalSubtract / 12);
 
-  if(e.clientX>width-100 && e.clientY<100){
-    rightClick++;
+        get(campingRef).then(snapshot => {
+          const campings = snapshot.val() || {};
+          const updates = {};
+          let newTotal = 0;
 
-    if(rightClick>=5){
+          Object.keys(campings).forEach(key => {
+            const value = campings[key] || 0;
+            const newValue = Math.max(0, value - subtractPerCamping);
+            updates[key] = newValue;
+            newTotal += newValue;
+          });
 
-      const randomPercent = 0.12 + Math.random() * 0.04; // 12% à 16%
-      const percentPerCamping = randomPercent / 12;
-
-      /* Transaction globale */
-      runTransaction(totalRef,(current)=>{
-        const total=current||0;
-        const subtract=Math.floor(total*randomPercent);
-        return Math.max(0,total-subtract);
-      });
-
-      /* Mise à jour campings (sans await = plus stable navigateur) */
-      get(campingRef).then(snapshot=>{
-        const campings=snapshot.val();
-        if(!campings) return;
-
-        const updates={};
-        Object.keys(campings).forEach(key=>{
-          const value=campings[key]||0;
-          const subtract=Math.floor(value*percentPerCamping);
-          updates[key]=Math.max(0,value-subtract);
+          update(campingRef, updates);
+          set(totalRef, newTotal); // correction exacte
         });
-
-        update(campingRef,updates);
       });
-
-      rightClick=0;
     }
-
-  } else {
-    rightClick=0;
-  }
-
+  } else rightClickCount = 0;
 });
 </script>
 

@@ -28,11 +28,11 @@ body {
   color:#00ff55;
   line-height:1;
   transition: transform 0.3s ease, text-shadow 0.3s ease;
+  text-align:center;
   text-shadow:
     0 0 10px #00ff55,
     0 0 25px #00ff55,
     0 0 50px rgba(0,255,85,0.7);
-  text-align:center;
 }
 
 .flash {
@@ -61,11 +61,10 @@ body {
   position: absolute;
   width: 10px;
   height: 10px;
-  background-color: red;
+  border-radius: 50%;
   opacity: 0.9;
   pointer-events: none;
   z-index: 1000;
-  border-radius: 50%;
   animation: fall 3s linear forwards;
 }
 
@@ -100,10 +99,9 @@ const db = getDatabase(app);
 const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 const totalDiv = document.getElementById("total");
-
 let previousValue = 0;
 
-// Animation compteur fluide
+// Compteur fluide
 function animateCounter(start, end, duration = 800) {
   const range = end - start;
   const startTime = performance.now();
@@ -125,13 +123,14 @@ function spawnConfetti() {
     const confetti = document.createElement('div');
     confetti.className='confetti';
     confetti.style.left = Math.random()*window.innerWidth + 'px';
+    confetti.style.top = '0px';
     confetti.style.backgroundColor = `hsl(${Math.random()*360},100%,50%)`;
     document.body.appendChild(confetti);
     setTimeout(()=>document.body.removeChild(confetti),3000);
   }
 }
 
-// Feux d’artifice
+// Feux d’artifice depuis le bas
 function fireworksOnce() {
   const canvas = document.createElement('canvas');
   canvas.width = window.innerWidth;
@@ -143,13 +142,15 @@ function fireworksOnce() {
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
 
+  // Explosion part de bas vers le haut
   const particles = [];
+  const baseY = window.innerHeight; // départ en bas
   for(let i=0;i<50;i++){
     particles.push({
       x: Math.random()*canvas.width,
-      y: Math.random()*canvas.height/2,
+      y: baseY,
       dx:(Math.random()-0.5)*5,
-      dy:(Math.random()-1.5)*5,
+      dy:-(Math.random()*8 + 2), // vers le haut
       radius:Math.random()*3+2,
       color:`hsl(${Math.random()*360},100%,50%)`
     });
@@ -160,10 +161,11 @@ function fireworksOnce() {
     t++;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     particles.forEach(p=>{
-      p.x+=p.dx; p.y+=p.dy;
+      p.x += p.dx;
+      p.y += p.dy;
       ctx.beginPath();
       ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
-      ctx.fillStyle=p.color;
+      ctx.fillStyle = p.color;
       ctx.fill();
     });
     if(t<60) requestAnimationFrame(animate);

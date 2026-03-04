@@ -10,7 +10,6 @@
   box-sizing:border-box;
   font-family:"Trebuchet MS", sans-serif;
 }
-
 body {
   height:100vh;
   display:flex;
@@ -20,12 +19,10 @@ body {
   overflow:hidden;
   position:relative;
 }
-
 .led-container {
   text-align:center;
   width:100%;
 }
-
 #total {
   font-size:18vw;
   font-weight:900;
@@ -37,15 +34,12 @@ body {
     0 0 25px #00ff55,
     0 0 50px rgba(0,255,85,0.7);
 }
-
 .flash {
   transform: scale(1.05);
 }
-
 .jackpot {
   animation: jackpotPulse 1s ease-in-out 3;
 }
-
 @keyframes jackpotPulse {
   0% { transform: scale(1); }
   50% { 
@@ -58,7 +52,6 @@ body {
   }
   100% { transform: scale(1); }
 }
-
 .confetti {
   position:absolute;
   width:10px;
@@ -92,7 +85,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const totalRef = ref(db, "total_global");
 const campingRef = ref(db, "camping");
 const totalDiv = document.getElementById("total");
@@ -133,7 +125,7 @@ function spawnConfetti(count=500){
 }
 
 // Feux d’artifice simple
-function fireworks(){
+function fireworks(duration=15000){
   const canvas=document.createElement('canvas');
   canvas.width=window.innerWidth;
   canvas.height=window.innerHeight;
@@ -145,7 +137,7 @@ function fireworks(){
   const ctx=canvas.getContext('2d');
 
   const particles=[];
-  for(let i=0;i<60;i++){
+  for(let i=0;i<100;i++){
     particles.push({
       x: Math.random()*canvas.width,
       y: Math.random()*canvas.height/2,
@@ -156,9 +148,9 @@ function fireworks(){
     });
   }
 
-  let t=0;
-  function animateFirework(){
-    t+=1;
+  const startTime = performance.now();
+  function animateFirework(currentTime){
+    const t = currentTime-startTime;
     ctx.fillStyle='rgba(0,0,0,0.2)';
     ctx.fillRect(0,0,canvas.width,canvas.height);
     particles.forEach(p=>{
@@ -167,14 +159,11 @@ function fireworks(){
       ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
       ctx.fillStyle=p.color;
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(p.x+Math.random()*5, p.y+Math.random()*5, 1+Math.random()*2,0,2*Math.PI);
-      ctx.fill();
     });
-    if(t<120) requestAnimationFrame(animateFirework);
+    if(t<duration) requestAnimationFrame(animateFirework);
     else canvas.remove();
   }
-  animateFirework();
+  requestAnimationFrame(animateFirework);
 }
 
 // Mise à jour temps réel
@@ -188,41 +177,11 @@ onValue(totalRef, snapshot=>{
   }
 
   // Jackpot 1 million
-  if(value >= 1000000 && previousValue<1000000){
+  if(value>=1000000 && previousValue<1000000){
     totalDiv.classList.add("jackpot");
-    
-    // TEXTE CENTRAL
-    const millionText = document.createElement('div');
-    millionText.innerText = '🎉 1 MILLION ! 🎉';
-    millionText.style.position='absolute';
-    millionText.style.top='40%';
-    millionText.style.left='50%';
-    millionText.style.transform='translate(-50%, -50%) scale(0)';
-    millionText.style.fontSize='8vw';
-    millionText.style.color='#fffa00';
-    millionText.style.fontWeight='900';
-    millionText.style.textShadow='0 0 30px #fff, 0 0 60px #ff0, 0 0 100px #ff0';
-    millionText.style.zIndex=1000;
-    millionText.style.pointerEvents='none';
-    document.body.appendChild(millionText);
-
-    setTimeout(()=>{
-      millionText.style.transition='transform 0.6s ease, opacity 0.6s ease';
-      millionText.style.transform='translate(-50%, -50%) scale(1)';
-      millionText.style.opacity=1;
-    },50);
-
-    setTimeout(()=>{
-      millionText.style.transform='translate(-50%, -50%) scale(0)';
-      millionText.style.opacity=0;
-      setTimeout(()=>millionText.remove(),1000);
-    },8000);
-
-    // Confettis et feux
-    spawnConfetti();
-    fireworks();
-
-    setTimeout(()=>totalDiv.classList.remove("jackpot"),5000);
+    spawnConfetti(800);
+    fireworks(15000);
+    setTimeout(()=>totalDiv.classList.remove("jackpot"),15000);
   }
 
   previousValue=value;
@@ -274,6 +233,5 @@ document.body.addEventListener("click",(e)=>{
   } else rightClickCount=0;
 });
 </script>
-
 </body>
 </html>

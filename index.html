@@ -5,219 +5,533 @@
 <title>Cagnotte Globale</title>
 
 <style>
-* {
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:"Trebuchet MS", sans-serif;
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:"Trebuchet MS",sans-serif;
 }
 
-body {
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#000;
-  overflow:hidden;
-  position:relative;
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:#000;
+overflow:hidden;
 }
 
-#total {
-  font-size:18vw;
-  font-weight:900;
-  color:#00ff55;
-  line-height:1;
-  text-align:center;
-  text-shadow:
-    0 0 10px #00ff55,
-    0 0 25px #00ff55,
-    0 0 50px rgba(0,255,85,0.7);
-  transition: transform 0.3s ease, text-shadow 0.3s ease;
+/* CONTENEUR PRINCIPAL */
+
+.main-container{
+display:flex;
+align-items:center;
+justify-content:center;
+width:100%;
+height:100vh;
 }
 
-.flash {
-  transform: scale(1.05);
+/* MONTANT */
+
+#total{
+font-size:18vw;
+font-weight:900;
+color:#00ff55;
+line-height:1;
+transition:transform 0.3s ease,text-shadow 0.3s ease,color 0.5s ease;
+
+text-shadow:
+0 0 10px currentColor,
+0 0 25px currentColor,
+0 0 50px rgba(255,255,255,0.3);
 }
 
-.jackpot {
-  animation: jackpotPulse 1s ease-in-out 3;
+.flash{
+transform:scale(1.05);
 }
 
-@keyframes jackpotPulse {
-  0% { transform: scale(1); }
-  50% { 
-    transform: scale(1.12);
-    text-shadow:
-      0 0 20px #00ff55,
-      0 0 40px #00ff55,
-      0 0 80px #00ff55,
-      0 0 120px rgba(0,255,85,1);
-  }
-  100% { transform: scale(1); }
+.jackpot{
+animation:jackpotPulse 1s ease-in-out 3;
 }
+
+@keyframes jackpotPulse{
+
+0%{transform:scale(1)}
+
+50%{
+transform:scale(1.12);
+text-shadow:
+0 0 20px currentColor,
+0 0 40px currentColor,
+0 0 80px currentColor,
+0 0 120px rgba(255,255,255,1);
+}
+
+100%{transform:scale(1)}
+
+}
+
+/* BARRES */
+
+.progress-bar{
+
+width:40px;
+height:70vh;
+background:#111;
+border-radius:20px;
+margin:0 50px;
+position:relative;
+overflow:hidden;
+
+box-shadow:
+inset 0 0 15px #000,
+0 0 20px rgba(0,255,85,0.25);
+
+}
+
+.progress-fill{
+
+position:absolute;
+bottom:0;
+width:100%;
+height:0%;
+
+background:linear-gradient(to top,#00ff55,#00ffaa);
+
+transition:height 0.6s ease;
+
+}
+
+.progress-bar.right .progress-fill{
+
+top:0;
+bottom:auto;
+
+}
+
+/* CONFETTIS */
+
+.confetti{
+
+position:absolute;
+width:8px;
+height:8px;
+border-radius:50%;
+opacity:0.9;
+pointer-events:none;
+z-index:1000;
+
+animation:fall 3s linear forwards;
+
+}
+
+@keyframes fall{
+
+0%{transform:translateY(-10px) rotate(0)}
+
+100%{
+transform:translateY(100vh) rotate(720deg);
+opacity:0;
+}
+
+}
+
+canvas{
+position:absolute;
+top:0;
+left:0;
+pointer-events:none;
+}
+
 </style>
 </head>
+
 <body>
+
+<div class="main-container">
+
+<div class="progress-bar left">
+<div id="progressLeft" class="progress-fill"></div>
+</div>
 
 <div id="total">0</div>
 
+<div class="progress-bar right">
+<div id="progressRight" class="progress-fill"></div>
+</div>
+
+</div>
+
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔑 Firebase
+/* FIREBASE */
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-  authDomain: "compteur-million-2.firebaseapp.com",
-  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "compteur-million-2",
-  storageBucket: "compteur-million-2.firebasestorage.app",
-  messagingSenderId: "226299332536",
-  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
+
+apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
+authDomain: "compteur-million-2.firebaseapp.com",
+databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
+projectId: "compteur-million-2",
+storageBucket: "compteur-million-2.firebasestorage.app",
+messagingSenderId: "226299332536",
+appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
+
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const totalRef = ref(db, "total_global");
-const campingRef = ref(db, "camping");
-const totalDiv = document.getElementById("total");
-let previousValue = 0;
+const totalRef = ref(db,"total_global");
+const campingRef = ref(db,"camping");
 
-// Animation compteur fluide
-function animateCounter(start, end, duration = 800) {
-  const range = end - start;
-  const startTime = performance.now();
+const totalDiv=document.getElementById("total");
 
-  function update(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const currentValue = Math.floor(start + range * progress);
-    totalDiv.innerText = currentValue.toLocaleString("fr-FR");
-    if(progress < 1) requestAnimationFrame(update);
-  }
+const progressLeft=document.getElementById("progressLeft");
+const progressRight=document.getElementById("progressRight");
 
-  requestAnimationFrame(update);
+const MAX_VALUE=1000000;
+
+let previousValue=0;
+
+/* COMPTEUR ANIME */
+
+function animateCounter(start,end,duration=800){
+
+const range=end-start;
+const startTime=performance.now();
+
+function updateCounter(currentTime){
+
+const elapsed=currentTime-startTime;
+const progress=Math.min(elapsed/duration,1);
+
+const value=Math.floor(start+range*progress);
+
+totalDiv.innerText=value.toLocaleString("fr-FR");
+
+if(progress<1)requestAnimationFrame(updateCounter);
+
 }
 
-// Feux d’artifice depuis le bas
-function fireworksOnce() {
-  const canvas = document.createElement('canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  canvas.style.position='absolute';
-  canvas.style.top='0';
-  canvas.style.left='0';
-  canvas.style.zIndex='999';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
+requestAnimationFrame(updateCounter);
 
-  const particles = [];
-  const baseY = window.innerHeight; // départ en bas
-  for(let i=0;i<50;i++){
-    particles.push({
-      x: Math.random()*canvas.width,
-      y: baseY,
-      dx:(Math.random()-0.5)*5,
-      dy:-(Math.random()*8 + 2), // vers le haut
-      radius:Math.random()*3+2,
-      color:`hsl(${Math.random()*360},100%,50%)`
-    });
-  }
-
-  let t=0;
-  function animate(){
-    t++;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    particles.forEach(p=>{
-      p.x += p.dx;
-      p.y += p.dy;
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
-      ctx.fillStyle = p.color;
-      ctx.fill();
-    });
-    if(t<60) requestAnimationFrame(animate);
-    else document.body.removeChild(canvas);
-  }
-  animate();
 }
 
-// 🔔 Explosion toutes les secondes pendant 15s
-function celebration() {
-  let count = 0;
-  const interval = setInterval(()=>{
-    fireworksOnce();
-    count++;
-    if(count>=15) clearInterval(interval);
-  },1000);
+/* COULEUR SELON PALIER */
+
+function updateColor(value){
+
+if(value>=1000000){
+
+totalDiv.style.color="#FFD700";
+
 }
 
-// Mise à jour temps réel
-onValue(totalRef, snapshot=>{
-  const value = snapshot.val()||0;
-  animateCounter(previousValue,value);
+else if(value>=500000){
 
-  if(value>previousValue){
-    totalDiv.classList.add("flash");
-    setTimeout(()=>totalDiv.classList.remove("flash"),200);
-  }
+totalDiv.style.color="#ff4444";
 
-  if(value>=1000000 && previousValue<1000000){
-    totalDiv.classList.add("jackpot");
-    celebration();
-    setTimeout(()=>totalDiv.classList.remove("jackpot"),15000);
-  }
+}
 
-  previousValue = value;
+else if(value>=100000){
+
+totalDiv.style.color="#ff8800";
+
+}
+
+else if(value>=10000){
+
+totalDiv.style.color="#bb66ff";
+
+}
+
+else if(value>=1000){
+
+totalDiv.style.color="#33aaff";
+
+}
+
+else{
+
+totalDiv.style.color="#00ff55";
+
+}
+
+}
+
+/* CONFETTIS */
+
+function spawnConfetti(){
+
+for(let i=0;i<150;i++){
+
+const confetti=document.createElement("div");
+
+confetti.className="confetti";
+
+confetti.style.left=Math.random()*window.innerWidth+"px";
+
+confetti.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`;
+
+document.body.appendChild(confetti);
+
+setTimeout(()=>confetti.remove(),3000);
+
+}
+
+}
+
+/* FEU D ARTIFICE */
+
+function launchFirework(){
+
+const canvas=document.createElement("canvas");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+document.body.appendChild(canvas);
+
+const ctx=canvas.getContext("2d");
+
+const particles=[];
+
+const x=Math.random()*canvas.width;
+const y=Math.random()*canvas.height*0.5;
+
+for(let i=0;i<80;i++){
+
+particles.push({
+
+x:x,
+y:y,
+
+dx:(Math.random()-0.5)*8,
+dy:(Math.random()-0.5)*8,
+
+radius:Math.random()*3+2,
+
+color:`hsl(${Math.random()*360},100%,50%)`
+
 });
 
-// 🔴 Remise à 0 : 5 clics coin haut gauche
+}
+
+let frame=0;
+
+function animate(){
+
+frame++;
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+particles.forEach(p=>{
+
+p.x+=p.dx;
+
+p.y+=p.dy;
+
+ctx.beginPath();
+
+ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+
+ctx.fillStyle=p.color;
+
+ctx.fill();
+
+});
+
+if(frame<60){
+
+requestAnimationFrame(animate);
+
+}
+
+else{
+
+canvas.remove();
+
+}
+
+}
+
+animate();
+
+}
+
+/* FEU D ARTIFICE 15 SECONDES */
+
+function megaCelebration(){
+
+let count=0;
+
+const interval=setInterval(()=>{
+
+launchFirework();
+
+spawnConfetti();
+
+count++;
+
+if(count>=15){
+
+clearInterval(interval);
+
+}
+
+},1000);
+
+}
+
+/* TEMPS REEL */
+
+onValue(totalRef,snapshot=>{
+
+const value=snapshot.val()||0;
+
+animateCounter(previousValue,value);
+
+if(value>previousValue){
+
+totalDiv.classList.add("flash");
+
+setTimeout(()=>totalDiv.classList.remove("flash"),200);
+
+}
+
+/* BARRES PROGRESSION */
+
+const percent=Math.min(value/MAX_VALUE,1);
+
+progressLeft.style.height=(percent*100)+"%";
+
+progressRight.style.height=(100-percent*100)+"%";
+
+/* COULEUR */
+
+updateColor(value);
+
+/* JACKPOT */
+
+if(value>=1000000 && previousValue<1000000){
+
+totalDiv.classList.add("jackpot");
+
+megaCelebration();
+
+setTimeout(()=>totalDiv.classList.remove("jackpot"),5000);
+
+}
+
+previousValue=value;
+
+});
+
+/* RESET 5 CLICS HAUT GAUCHE */
+
 let leftClickCount=0;
-document.body.addEventListener("click",(e)=>{
-  if(e.clientX<100 && e.clientY<100){
-    leftClickCount++;
-    if(leftClickCount>=5){
-      set(totalRef,0);
-      set(campingRef,null);
-      leftClickCount=0;
-    }
-  } else leftClickCount=0;
+
+document.body.addEventListener("click",e=>{
+
+if(e.clientX<100 && e.clientY<100){
+
+leftClickCount++;
+
+if(leftClickCount>=5){
+
+set(totalRef,0);
+
+set(campingRef,null);
+
+leftClickCount=0;
+
+}
+
+}
+
+else{
+
+leftClickCount=0;
+
+}
+
 });
 
-// ⚡ Soustraction aléatoire 12-16% : 5 clics coin haut droit
+/* SOUSTRACTION ALEATOIRE */
+
 let rightClickCount=0;
-document.body.addEventListener("click",(e)=>{
-  const width=window.innerWidth;
-  if(e.clientX>width-100 && e.clientY<100){
-    rightClickCount++;
-    if(rightClickCount>=5){
-      rightClickCount=0;
-      get(totalRef).then(totalSnap=>{
-        const total = totalSnap.val()||0;
-        if(total<=0) return;
-        const percent = 0.12 + Math.random()*0.04;
-        const totalSubtract = Math.floor(total*percent);
-        const subtractPerCamping = Math.floor(totalSubtract/12);
 
-        get(campingRef).then(snapshot=>{
-          const campings = snapshot.val()||{};
-          const updates = {};
-          let newTotal=0;
-          Object.keys(campings).forEach(key=>{
-            const value=campings[key]||0;
-            const newValue=Math.max(0,value-subtractPerCamping);
-            updates[key]=newValue;
-            newTotal+=newValue;
-          });
-          update(campingRef,updates);
-          set(totalRef,newTotal);
-        });
-      });
-    }
-  } else rightClickCount=0;
+document.body.addEventListener("click",e=>{
+
+const width=window.innerWidth;
+
+if(e.clientX>width-100 && e.clientY<100){
+
+rightClickCount++;
+
+if(rightClickCount>=5){
+
+rightClickCount=0;
+
+get(totalRef).then(totalSnap=>{
+
+const total=totalSnap.val()||0;
+
+if(total<=0)return;
+
+const percent=0.12+Math.random()*0.04;
+
+const totalSubtract=Math.floor(total*percent);
+
+const subtractPerCamping=Math.floor(totalSubtract/12);
+
+get(campingRef).then(snapshot=>{
+
+const campings=snapshot.val()||{};
+
+const updates={};
+
+let newTotal=0;
+
+Object.keys(campings).forEach(key=>{
+
+const value=campings[key]||0;
+
+const newValue=Math.max(0,value-subtractPerCamping);
+
+updates[key]=newValue;
+
+newTotal+=newValue;
+
 });
+
+update(campingRef,updates);
+
+set(totalRef,newTotal);
+
+});
+
+});
+
+}
+
+}
+
+else{
+
+rightClickCount=0;
+
+}
+
+});
+
 </script>
 
 </body>
 </html>
+
+

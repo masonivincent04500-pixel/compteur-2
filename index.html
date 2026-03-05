@@ -22,126 +22,57 @@ background:#000;
 overflow:hidden;
 }
 
-/* CONTENEUR PRINCIPAL */
-
-.main-container{
+.container{
 display:flex;
 align-items:center;
 justify-content:center;
+gap:80px;
 width:100%;
-height:100vh;
 }
 
-/* MONTANT */
+.progress-bar{
+width:40px;
+height:70vh;
+border:2px solid rgba(255,255,255,0.2);
+border-radius:20px;
+position:relative;
+overflow:hidden;
+}
+
+.progress-fill{
+position:absolute;
+left:0;
+width:100%;
+background:#00ff55;
+transition:height 0.5s;
+}
+
+.left .progress-fill{
+bottom:0;
+}
+
+.right .progress-fill{
+top:0;
+height:100%;
+}
+
+.led-container{
+text-align:center;
+}
 
 #total{
-font-size:18vw;
+font-size:16vw;
 font-weight:900;
 color:#00ff55;
-line-height:1;
-transition:transform 0.3s ease,text-shadow 0.3s ease,color 0.5s ease;
-
 text-shadow:
 0 0 10px currentColor,
-0 0 25px currentColor,
-0 0 50px rgba(255,255,255,0.3);
+0 0 30px currentColor,
+0 0 60px rgba(255,255,255,0.2);
+transition:all 0.4s;
 }
 
 .flash{
 transform:scale(1.05);
-}
-
-.jackpot{
-animation:jackpotPulse 1s ease-in-out 3;
-}
-
-@keyframes jackpotPulse{
-
-0%{transform:scale(1)}
-
-50%{
-transform:scale(1.12);
-text-shadow:
-0 0 20px currentColor,
-0 0 40px currentColor,
-0 0 80px currentColor,
-0 0 120px rgba(255,255,255,1);
-}
-
-100%{transform:scale(1)}
-
-}
-
-/* BARRES */
-
-.progress-bar{
-
-width:40px;
-height:70vh;
-background:#111;
-border-radius:20px;
-margin:0 50px;
-position:relative;
-overflow:hidden;
-
-box-shadow:
-inset 0 0 15px #000,
-0 0 20px rgba(0,255,85,0.25);
-
-}
-
-.progress-fill{
-
-position:absolute;
-bottom:0;
-width:100%;
-height:0%;
-
-background:linear-gradient(to top,#00ff55,#00ffaa);
-
-transition:height 0.6s ease;
-
-}
-
-.progress-bar.right .progress-fill{
-
-top:0;
-bottom:auto;
-
-}
-
-/* CONFETTIS */
-
-.confetti{
-
-position:absolute;
-width:8px;
-height:8px;
-border-radius:50%;
-opacity:0.9;
-pointer-events:none;
-z-index:1000;
-
-animation:fall 3s linear forwards;
-
-}
-
-@keyframes fall{
-
-0%{transform:translateY(-10px) rotate(0)}
-
-100%{
-transform:translateY(100vh) rotate(720deg);
-opacity:0;
-}
-
-}
-
-canvas{
-position:absolute;
-top:0;
-left:0;
-pointer-events:none;
 }
 
 </style>
@@ -149,16 +80,18 @@ pointer-events:none;
 
 <body>
 
-<div class="main-container">
+<div class="container">
 
 <div class="progress-bar left">
-<div id="progressLeft" class="progress-fill"></div>
+<div class="progress-fill" id="progressLeft"></div>
 </div>
 
+<div class="led-container">
 <div id="total">0</div>
+</div>
 
 <div class="progress-bar right">
-<div id="progressRight" class="progress-fill"></div>
+<div class="progress-fill" id="progressRight"></div>
 </div>
 
 </div>
@@ -168,18 +101,14 @@ pointer-events:none;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* FIREBASE */
-
 const firebaseConfig = {
-
-apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-authDomain: "compteur-million-2.firebaseapp.com",
-databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-projectId: "compteur-million-2",
-storageBucket: "compteur-million-2.firebasestorage.app",
-messagingSenderId: "226299332536",
-appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d"
-
+apiKey:"AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
+authDomain:"compteur-million-2.firebaseapp.com",
+databaseURL:"https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
+projectId:"compteur-million-2",
+storageBucket:"compteur-million-2.firebasestorage.app",
+messagingSenderId:"226299332536",
+appId:"1:226299332536:web:4d79be3a4ed0b2ba50714d"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -189,22 +118,31 @@ const totalRef = ref(db,"total_global");
 const campingRef = ref(db,"camping");
 
 const totalDiv=document.getElementById("total");
-
 const progressLeft=document.getElementById("progressLeft");
 const progressRight=document.getElementById("progressRight");
 
-const MAX_VALUE=1000000;
-
 let previousValue=0;
 
-/* COMPTEUR ANIME */
+const MAX=1000000;
+
+function getColor(value){
+
+if(value>=1000000) return "#FFD700";
+if(value>=500000) return "#ff3b3b";
+if(value>=100000) return "#00d0ff";
+if(value>=10000) return "#ff8c00";
+if(value>=1000) return "#00ff55";
+
+return "#00ff55";
+
+}
 
 function animateCounter(start,end,duration=800){
 
 const range=end-start;
 const startTime=performance.now();
 
-function updateCounter(currentTime){
+function update(currentTime){
 
 const elapsed=currentTime-startTime;
 const progress=Math.min(elapsed/duration,1);
@@ -213,95 +151,52 @@ const value=Math.floor(start+range*progress);
 
 totalDiv.innerText=value.toLocaleString("fr-FR");
 
-if(progress<1)requestAnimationFrame(updateCounter);
+if(progress<1) requestAnimationFrame(update);
 
 }
 
-requestAnimationFrame(updateCounter);
+requestAnimationFrame(update);
 
 }
 
-/* COULEUR SELON PALIER */
+function updateProgress(value){
+
+const percent=Math.min(value/MAX,1);
+
+progressLeft.style.height=(percent*100)+"%";
+progressRight.style.height=(percent*100)+"%";
+
+}
 
 function updateColor(value){
 
-if(value>=1000000){
+const color=getColor(value);
 
-totalDiv.style.color="#FFD700";
-
-}
-
-else if(value>=500000){
-
-totalDiv.style.color="#ff4444";
+totalDiv.style.color=color;
+progressLeft.style.background=color;
+progressRight.style.background=color;
 
 }
-
-else if(value>=100000){
-
-totalDiv.style.color="#ff8800";
-
-}
-
-else if(value>=10000){
-
-totalDiv.style.color="#bb66ff";
-
-}
-
-else if(value>=1000){
-
-totalDiv.style.color="#33aaff";
-
-}
-
-else{
-
-totalDiv.style.color="#00ff55";
-
-}
-
-}
-
-/* CONFETTIS */
-
-function spawnConfetti(){
-
-for(let i=0;i<150;i++){
-
-const confetti=document.createElement("div");
-
-confetti.className="confetti";
-
-confetti.style.left=Math.random()*window.innerWidth+"px";
-
-confetti.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`;
-
-document.body.appendChild(confetti);
-
-setTimeout(()=>confetti.remove(),3000);
-
-}
-
-}
-
-/* FEU D ARTIFICE */
 
 function launchFirework(){
 
 const canvas=document.createElement("canvas");
-
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
+
+canvas.style.position="absolute";
+canvas.style.top="0";
+canvas.style.left="0";
+canvas.style.pointerEvents="none";
 
 document.body.appendChild(canvas);
 
 const ctx=canvas.getContext("2d");
 
-const particles=[];
-
 const x=Math.random()*canvas.width;
-const y=Math.random()*canvas.height*0.5;
+const y=Math.random()*canvas.height*0.6;
+
+const particles=[];
 
 for(let i=0;i<80;i++){
 
@@ -309,49 +204,38 @@ particles.push({
 
 x:x,
 y:y,
-
 dx:(Math.random()-0.5)*8,
 dy:(Math.random()-0.5)*8,
-
-radius:Math.random()*3+2,
-
+life:60,
 color:`hsl(${Math.random()*360},100%,50%)`
 
 });
 
 }
 
-let frame=0;
-
 function animate(){
-
-frame++;
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
 particles.forEach(p=>{
 
 p.x+=p.dx;
-
 p.y+=p.dy;
 
+p.life--;
+
 ctx.beginPath();
-
-ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
-
+ctx.arc(p.x,p.y,3,0,Math.PI*2);
 ctx.fillStyle=p.color;
-
 ctx.fill();
 
 });
 
-if(frame<60){
+if(particles.some(p=>p.life>0)){
 
 requestAnimationFrame(animate);
 
-}
-
-else{
+}else{
 
 canvas.remove();
 
@@ -363,8 +247,6 @@ animate();
 
 }
 
-/* FEU D ARTIFICE 15 SECONDES */
-
 function megaCelebration(){
 
 let count=0;
@@ -372,8 +254,6 @@ let count=0;
 const interval=setInterval(()=>{
 
 launchFirework();
-
-spawnConfetti();
 
 count++;
 
@@ -387,13 +267,15 @@ clearInterval(interval);
 
 }
 
-/* TEMPS REEL */
-
 onValue(totalRef,snapshot=>{
 
 const value=snapshot.val()||0;
 
 animateCounter(previousValue,value);
+
+updateProgress(value);
+
+updateColor(value);
 
 if(value>previousValue){
 
@@ -403,27 +285,9 @@ setTimeout(()=>totalDiv.classList.remove("flash"),200);
 
 }
 
-/* BARRES PROGRESSION */
-
-const percent=Math.min(value/MAX_VALUE,1);
-
-progressLeft.style.height=(percent*100)+"%";
-
-progressRight.style.height=(100-percent*100)+"%";
-
-/* COULEUR */
-
-updateColor(value);
-
-/* JACKPOT */
-
 if(value>=1000000 && previousValue<1000000){
 
-totalDiv.classList.add("jackpot");
-
 megaCelebration();
-
-setTimeout(()=>totalDiv.classList.remove("jackpot"),5000);
 
 }
 
@@ -431,11 +295,9 @@ previousValue=value;
 
 });
 
-/* RESET 5 CLICS HAUT GAUCHE */
-
 let leftClickCount=0;
 
-document.body.addEventListener("click",e=>{
+document.body.addEventListener("click",(e)=>{
 
 if(e.clientX<100 && e.clientY<100){
 
@@ -444,16 +306,13 @@ leftClickCount++;
 if(leftClickCount>=5){
 
 set(totalRef,0);
-
 set(campingRef,null);
 
 leftClickCount=0;
 
 }
 
-}
-
-else{
+}else{
 
 leftClickCount=0;
 
@@ -461,11 +320,9 @@ leftClickCount=0;
 
 });
 
-/* SOUSTRACTION ALEATOIRE */
-
 let rightClickCount=0;
 
-document.body.addEventListener("click",e=>{
+document.body.addEventListener("click",(e)=>{
 
 const width=window.innerWidth;
 
@@ -481,7 +338,7 @@ get(totalRef).then(totalSnap=>{
 
 const total=totalSnap.val()||0;
 
-if(total<=0)return;
+if(total<=0) return;
 
 const percent=0.12+Math.random()*0.04;
 
@@ -519,9 +376,7 @@ set(totalRef,newTotal);
 
 }
 
-}
-
-else{
+}else{
 
 rightClickCount=0;
 

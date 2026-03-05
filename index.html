@@ -247,6 +247,12 @@ requestAnimationFrame(animateFireworks);
 
 animateFireworks();
 
+/* NETTOYAGE DISCRET */
+function cleanupFireworks(){
+particles=[]; // vide toutes les particules
+ctx.clearRect(0,0,canvas.width,canvas.height); // efface le canvas
+}
+
 /* CELEBRATION */
 
 function megaCelebration(){

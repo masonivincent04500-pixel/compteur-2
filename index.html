@@ -5,387 +5,259 @@
 <title>Cagnotte Globale</title>
 
 <style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:"Trebuchet MS",sans-serif;
+* {
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Trebuchet MS", sans-serif;
 }
 
-body{
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:#000;
-overflow:hidden;
+body {
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+  overflow:hidden;
+  position:relative;
 }
 
-.container{
-display:flex;
-align-items:center;
-justify-content:center;
-gap:80px;
-width:100%;
+.led-container {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  width:300px;
 }
 
-.progress-bar{
-width:40px;
-height:70vh;
-border:2px solid rgba(255,255,255,0.2);
-border-radius:20px;
-position:relative;
-overflow:hidden;
+.bar {
+  width:20px;
+  height:80%;
+  border-radius:10px;
+  margin:0 20px;
+  background:#222;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
 }
 
-.progress-fill{
-position:absolute;
-left:0;
-width:100%;
-transition:height 0.5s;
+.bar .progress-fill {
+  width:100%;
+  background:#00ff55;
+  height:0;
+  transition: height 0.5s, background 0.3s;
 }
 
-.left .progress-fill{
-bottom:0;
-height:0%;
+#total {
+  font-size:18vw;
+  font-weight:900;
+  color:#00ff55;
+  line-height:1;
+  text-align:center;
+  transition: transform 0.3s ease, text-shadow 0.3s ease, color 0.3s;
 }
 
-.right .progress-fill{
-top:0;
-height:100%;
+.flash {
+  transform: scale(1.05);
 }
 
-.led-container{
-text-align:center;
+.palier-flash {
+  animation: palierFlash 3s ease forwards;
 }
 
-#total{
-font-size:16vw;
-font-weight:900;
-color:#00ff55;
-text-shadow:
-0 0 10px currentColor,
-0 0 30px currentColor,
-0 0 60px rgba(255,255,255,0.3);
-transition:all 0.4s;
+@keyframes palierFlash {
+  0% { text-shadow: 0 0 10px currentColor; transform: scale(1); }
+  50% { text-shadow: 0 0 50px currentColor, 0 0 100px currentColor; transform: scale(1.1); }
+  100% { text-shadow: 0 0 10px currentColor; transform: scale(1); }
 }
 
-.flash{
-transform:scale(1.05);
+/* Feux d’artifice pour 1M */
+.firework {
+  position:absolute;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:1000;
 }
-
 </style>
 </head>
-
 <body>
 
-<div class="container">
-
-<div class="progress-bar left">
-<div class="progress-fill" id="progressLeft"></div>
-</div>
-
 <div class="led-container">
-<div id="total">0</div>
-</div>
+  <div class="bar left">
+    <div class="progress-fill" id="leftFill"></div>
+  </div>
 
-<div class="progress-bar right">
-<div class="progress-fill" id="progressRight"></div>
-</div>
+  <div id="total">0</div>
 
+  <div class="bar right">
+    <div class="progress-fill" id="rightFill"></div>
+  </div>
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig={
-apiKey:"AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
-authDomain:"compteur-million-2.firebaseapp.com",
-databaseURL:"https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
-projectId:"compteur-million-2",
-storageBucket:"compteur-million-2.firebasestorage.app",
-messagingSenderId:"226299332536",
-appId:"1:226299332536:web:4d79be3a4ed0b2ba50714d"
+const firebaseConfig = { 
+  apiKey: "AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA", 
+  authDomain: "compteur-million-2.firebaseapp.com", 
+  databaseURL: "https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app", 
+  projectId: "compteur-million-2", 
+  storageBucket: "compteur-million-2.firebasestorage.app", 
+  messagingSenderId: "226299332536", 
+  appId: "1:226299332536:web:4d79be3a4ed0b2ba50714d" 
 };
 
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-const totalRef=ref(db,"total_global");
-const campingRef=ref(db,"camping");
+const totalRef = ref(db,"total_global");
+const campingRef = ref(db,"camping");
+const totalDiv = document.getElementById("total");
+const leftFill = document.getElementById("leftFill");
+const rightFill = document.getElementById("rightFill");
 
-const totalDiv=document.getElementById("total");
-const progressLeft=document.getElementById("progressLeft");
-const progressRight=document.getElementById("progressRight");
+let previousValue = 0;
 
-let previousValue=0;
-const MAX=1000000;
+// Paliers
+const paliers = [
+  {value:1000, color:"#FFA500"},   // Orange
+  {value:10000, color:"#A020F0"},  // Violet
+  {value:100000, color:"#00d0ff"}, // Bleu
+  {value:500000, color:"#ff3b3b"}, // Rouge
+  {value:1000000, color:"#FFD700"} // Or
+];
 
-function getColor(value){
-
-if(value>=1000000) return "#FFD700";
-if(value>=500000) return "#ff3b3b";
-if(value>=100000) return "#00d0ff";
-if(value>=10000) return "#ff8c00";
-if(value>=1000) return "#00ff55";
-
-return "#00ff55";
-
+// Couleur palier actuelle
+function getPalierColor(value){
+  for(let i=paliers.length-1;i>=0;i--){
+    if(value>=paliers[i].value) return paliers[i].color;
+  }
+  return "#00ff55";
 }
 
+// Animate compteur
 function animateCounter(start,end,duration=800){
-
-const range=end-start;
-const startTime=performance.now();
-
-function update(currentTime){
-
-const elapsed=currentTime-startTime;
-const progress=Math.min(elapsed/duration,1);
-
-const value=Math.floor(start+range*progress);
-
-totalDiv.innerText=value.toLocaleString("fr-FR");
-
-if(progress<1) requestAnimationFrame(update);
-
+  const range=end-start;
+  const startTime=performance.now();
+  function update(currentTime){
+    const elapsed=currentTime-startTime;
+    const progress=Math.min(elapsed/duration,1);
+    const currentValue=Math.floor(start+range*progress);
+    totalDiv.innerText=currentValue.toLocaleString("fr-FR");
+    totalDiv.style.color=getPalierColor(currentValue);
+    const percent=Math.min(currentValue/1000000,1);
+    leftFill.style.height=(percent*100)+"%";
+    rightFill.style.height=((1-percent)*100)+"%";
+    if(progress<1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
 }
 
-requestAnimationFrame(update);
-
+// Flash palier
+function flashPalier(value){
+  const color = getPalierColor(value);
+  totalDiv.style.color=color;
+  totalDiv.classList.add('palier-flash');
+  setTimeout(()=>{
+    totalDiv.classList.remove('palier-flash');
+    totalDiv.style.color=color;
+  },3000);
 }
 
-function updateProgress(value){
-
-const percent=Math.min(value/MAX,1);
-
-progressLeft.style.height=(percent*100)+"%";
-
-const rightHeight=(1-percent)*100;
-
-progressRight.style.height=rightHeight+"%";
-
+// Feu d’artifice 1M
+function firework(){
+  const f = document.createElement("div");
+  f.className="firework";
+  f.style.left=Math.random()*window.innerWidth+"px";
+  f.style.top=window.innerHeight+"px";
+  f.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`;
+  document.body.appendChild(f);
+  const vy=-Math.random()*5-5;
+  let t=0;
+  function anim(){
+    t++;
+    const y = window.innerHeight + vy*t;
+    const x = parseFloat(f.style.left) + Math.sin(t/5)*10;
+    f.style.top=y+"px";
+    f.style.left=x+"px";
+    if(y>0) requestAnimationFrame(anim);
+    else document.body.removeChild(f);
+  }
+  anim();
 }
 
-function updateColor(value){
+// Mise à jour temps réel
+onValue(totalRef, snapshot=>{
+  const value = snapshot.val()||0;
+  animateCounter(previousValue,value);
 
-const color=getColor(value);
+  // Passage palier
+  paliers.forEach(p=>{
+    if(previousValue<p.value && value>=p.value){
+      flashPalier(p.value);
+    }
+  });
 
-totalDiv.style.color=color;
-progressLeft.style.background=color;
-progressRight.style.background=color;
+  // Jackpot 1M : feu d’artifice aléatoire 15s
+  if(value>=1000000 && previousValue<1000000){
+    const startTime=Date.now();
+    const interval = setInterval(()=>{
+      firework();
+      if(Date.now()-startTime>15000) clearInterval(interval);
+    }, Math.random()*400+100);
+  }
 
-}
-
-function launchFirework(){
-
-const canvas=document.createElement("canvas");
-
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-canvas.style.position="absolute";
-canvas.style.top="0";
-canvas.style.left="0";
-canvas.style.pointerEvents="none";
-
-document.body.appendChild(canvas);
-
-const ctx=canvas.getContext("2d");
-
-const x=Math.random()*canvas.width;
-const y=Math.random()*canvas.height*0.6;
-
-const particles=[];
-
-for(let i=0;i<80;i++){
-
-particles.push({
-x:x,
-y:y,
-dx:(Math.random()-0.5)*8,
-dy:(Math.random()-0.5)*8,
-life:60,
-color:`hsl(${Math.random()*360},100%,50%)`
+  previousValue=value;
 });
 
-}
-
-function animate(){
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-particles.forEach(p=>{
-
-p.x+=p.dx;
-p.y+=p.dy;
-p.life--;
-
-ctx.beginPath();
-ctx.arc(p.x,p.y,3,0,Math.PI*2);
-ctx.fillStyle=p.color;
-ctx.fill();
-
-});
-
-if(particles.some(p=>p.life>0)){
-
-requestAnimationFrame(animate);
-
-}else{
-
-canvas.remove();
-
-}
-
-}
-
-animate();
-
-}
-
-function megaCelebration(){
-
-const start=Date.now();
-
-function loop(){
-
-launchFirework();
-
-if(Date.now()-start<15000){
-
-const delay=100+Math.random()*400;
-
-setTimeout(loop,delay);
-
-}
-
-}
-
-loop();
-
-}
-
-onValue(totalRef,snapshot=>{
-
-const value=snapshot.val()||0;
-
-animateCounter(previousValue,value);
-
-updateProgress(value);
-
-updateColor(value);
-
-if(value>previousValue){
-
-totalDiv.classList.add("flash");
-
-setTimeout(()=>totalDiv.classList.remove("flash"),200);
-
-}
-
-if(value>=1000000 && previousValue<1000000){
-
-megaCelebration();
-
-}
-
-previousValue=value;
-
-});
-
+// 🔴 Remise à 0 : 5 clics coin haut gauche
 let leftClickCount=0;
-
 document.body.addEventListener("click",(e)=>{
-
-if(e.clientX<100 && e.clientY<100){
-
-leftClickCount++;
-
-if(leftClickCount>=5){
-
-set(totalRef,0);
-set(campingRef,null);
-
-leftClickCount=0;
-
-}
-
-}else{
-
-leftClickCount=0;
-
-}
-
+  if(e.clientX<100 && e.clientY<100){
+    leftClickCount++;
+    if(leftClickCount>=5){
+      set(totalRef,0);
+      set(campingRef,null);
+      leftClickCount=0;
+    }
+  } else leftClickCount=0;
 });
 
+// ⚡ Soustraction aléatoire 12-16% : 5 clics coin haut droit
 let rightClickCount=0;
-
 document.body.addEventListener("click",(e)=>{
-
-const width=window.innerWidth;
-
-if(e.clientX>width-100 && e.clientY<100){
-
-rightClickCount++;
-
-if(rightClickCount>=5){
-
-rightClickCount=0;
-
-get(totalRef).then(totalSnap=>{
-
-const total=totalSnap.val()||0;
-
-if(total<=0) return;
-
-const percent=0.12+Math.random()*0.04;
-
-const totalSubtract=Math.floor(total*percent);
-
-const subtractPerCamping=Math.floor(totalSubtract/12);
-
-get(campingRef).then(snapshot=>{
-
-const campings=snapshot.val()||{};
-
-const updates={};
-
-let newTotal=0;
-
-Object.keys(campings).forEach(key=>{
-
-const value=campings[key]||0;
-
-const newValue=Math.max(0,value-subtractPerCamping);
-
-updates[key]=newValue;
-
-newTotal+=newValue;
-
+  const width = window.innerWidth;
+  if(e.clientX>width-100 && e.clientY<100){
+    rightClickCount++;
+    if(rightClickCount>=5){
+      rightClickCount=0;
+      get(totalRef).then(totalSnap=>{
+        const total = totalSnap.val()||0;
+        if(total<=0) return;
+        const percent = 0.12 + Math.random()*0.04;
+        const totalSubtract = Math.floor(total*percent);
+        const subtractPerCamping = Math.floor(totalSubtract/12);
+        get(campingRef).then(snapshot=>{
+          const campings = snapshot.val()||{};
+          const updates = {};
+          let newTotal=0;
+          Object.keys(campings).forEach(key=>{
+            const value=campings[key]||0;
+            const newValue = Math.max(0,value-subtractPerCamping);
+            updates[key]=newValue;
+            newTotal+=newValue;
+          });
+          update(campingRef,updates);
+          set(totalRef,newTotal);
+        });
+      });
+    }
+  } else rightClickCount=0;
 });
-
-update(campingRef,updates);
-
-set(totalRef,newTotal);
-
-});
-
-});
-
-}
-
-}else{
-
-rightClickCount=0;
-
-}
-
-});
-
 </script>
 
 </body>

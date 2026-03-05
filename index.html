@@ -28,8 +28,6 @@ align-items:center;
 justify-content:center;
 width:100%;
 height:100vh;
-position:relative;
-z-index:2;
 }
 
 #total{
@@ -37,9 +35,6 @@ font-size:18vw;
 font-weight:900;
 color:#00ff55;
 line-height:1;
-position:relative;
-z-index:3;
-
 transition:transform 0.3s ease,text-shadow 0.3s ease,color 0.5s ease;
 
 text-shadow:
@@ -93,21 +88,13 @@ transition:height 0.6s ease;
 
 }
 
-.progress-bar.right .progress-fill{
-
-top:0;
-bottom:auto;
-
-}
-
-/* canvas derrière le chiffre */
+/* BARRE DROITE IDENTIQUE A LA GAUCHE */
 
 canvas{
 position:absolute;
 top:0;
 left:0;
 pointer-events:none;
-z-index:0;
 }
 
 </style>
@@ -136,7 +123,8 @@ z-index:0;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig={
+const firebaseConfig = {
+
 apiKey:"AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
 authDomain:"compteur-million-2.firebaseapp.com",
 databaseURL:"https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
@@ -144,6 +132,7 @@ projectId:"compteur-million-2",
 storageBucket:"compteur-million-2.firebasestorage.app",
 messagingSenderId:"226299332536",
 appId:"1:226299332536:web:4d79be3a4ed0b2ba50714d"
+
 };
 
 const app=initializeApp(firebaseConfig);
@@ -153,6 +142,7 @@ const totalRef=ref(db,"total_global");
 const campingRef=ref(db,"camping");
 
 const totalDiv=document.getElementById("total");
+
 const progressLeft=document.getElementById("progressLeft");
 const progressRight=document.getElementById("progressRight");
 
@@ -169,6 +159,7 @@ canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
 let particles=[];
+let fireworksActive=false;
 
 class Particle{
 
@@ -193,7 +184,9 @@ update(){
 
 this.x+=this.vx;
 this.y+=this.vy;
+
 this.vy+=0.05;
+
 this.alpha-=0.015;
 
 }
@@ -236,7 +229,9 @@ p.update();
 p.draw();
 
 if(p.alpha<=0){
+
 particles.splice(index,1);
+
 }
 
 });
@@ -247,9 +242,11 @@ requestAnimationFrame(animateFireworks);
 
 animateFireworks();
 
-/* CELEBRATION */
+/* FEUX D'ARTIFICE 15 SECONDES */
 
 function megaCelebration(){
+
+fireworksActive=true;
 
 let time=0;
 
@@ -260,12 +257,50 @@ createExplosion();
 time+=Math.random()*400+100;
 
 if(time<15000){
+
 setTimeout(randomExplosion,Math.random()*400+100);
+
+}else{
+
+endFireworks();
+
 }
 
 }
 
 randomExplosion();
+
+}
+
+/* NETTOYAGE DISCRET */
+
+function endFireworks(){
+
+fireworksActive=false;
+
+let fade=1;
+
+function clean(){
+
+fade-=0.03;
+
+ctx.fillStyle="rgba(0,0,0,0.15)";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+if(fade>0){
+
+requestAnimationFrame(clean);
+
+}else{
+
+particles=[];
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+}
+
+}
+
+clean();
 
 }
 
@@ -293,16 +328,45 @@ requestAnimationFrame(updateCounter);
 
 }
 
-/* COULEUR */
+/* COULEURS PALIERS */
 
 function updateColor(value){
 
-if(value>=1000000) totalDiv.style.color="#FFD700";
-else if(value>=500000) totalDiv.style.color="#ff4444";
-else if(value>=100000) totalDiv.style.color="#ff8800";
-else if(value>=10000) totalDiv.style.color="#00aaff";
-else if(value>=1000) totalDiv.style.color="#bb66ff";
-else totalDiv.style.color="#00ff55";
+if(value>=1000000){
+
+totalDiv.style.color="#FFD700";
+
+}
+
+else if(value>=500000){
+
+totalDiv.style.color="#ff4444";
+
+}
+
+else if(value>=100000){
+
+totalDiv.style.color="#ff8800";
+
+}
+
+else if(value>=10000){
+
+totalDiv.style.color="#00aaff";
+
+}
+
+else if(value>=1000){
+
+totalDiv.style.color="#bb66ff";
+
+}
+
+else{
+
+totalDiv.style.color="#00ff55";
+
+}
 
 }
 
@@ -331,27 +395,42 @@ animateCounter(previousValue,value);
 if(value>previousValue){
 
 totalDiv.classList.add("flash");
+
 setTimeout(()=>totalDiv.classList.remove("flash"),200);
 
 }
 
+/* BARRES */
+
 const percent=Math.min(value/MAX_VALUE,1);
 
 progressLeft.style.height=(percent*100)+"%";
-progressRight.style.height=(100-percent*100)+"%";
+progressRight.style.height=(percent*100)+"%";
+
+/* COULEUR */
 
 updateColor(value);
+
+/* PALIERS */
 
 const paliers=[1000,10000,100000,500000];
 
 paliers.forEach(p=>{
+
 if(value>=p && previousValue<p){
+
 flashPalier();
+
 }
+
 });
 
+/* JACKPOT */
+
 if(value>=1000000 && previousValue<1000000){
+
 megaCelebration();
+
 }
 
 previousValue=value;
@@ -377,11 +456,15 @@ leftClickCount=0;
 
 }
 
-}else leftClickCount=0;
+}else{
+
+leftClickCount=0;
+
+}
 
 });
 
-/* SOUSTRACTION */
+/* SOUSTRACTION % */
 
 let rightClickCount=0;
 
@@ -400,11 +483,13 @@ rightClickCount=0;
 get(totalRef).then(totalSnap=>{
 
 const total=totalSnap.val()||0;
+
 if(total<=0)return;
 
 const percent=0.12+Math.random()*0.04;
 
 const totalSubtract=Math.floor(total*percent);
+
 const subtractPerCamping=Math.floor(totalSubtract/12);
 
 get(campingRef).then(snapshot=>{
@@ -435,7 +520,11 @@ set(totalRef,newTotal);
 
 }
 
-}else rightClickCount=0;
+}else{
+
+rightClickCount=0;
+
+}
 
 });
 

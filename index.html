@@ -39,9 +39,7 @@ color:#00ff55;
 line-height:1;
 position:relative;
 z-index:3;
-
 transition:transform 0.3s ease,text-shadow 0.3s ease,color 0.5s ease;
-
 text-shadow:
 0 0 10px currentColor,
 0 0 25px currentColor,
@@ -225,19 +223,24 @@ requestAnimationFrame(updateCounter);
 }
 
 /* COULEUR */
-function updateColor(value){
-if(value>=1000000) totalDiv.style.color="#FFD700";
-else if(value>=500000) totalDiv.style.color="#ff4444";
-else if(value>=100000) totalDiv.style.color="#ff8800";
-else if(value>=10000) totalDiv.style.color="#00aaff";
-else if(value>=1000) totalDiv.style.color="#bb66ff";
-else totalDiv.style.color="#00ff55";
+function getPalierColor(value){
+if(value>=1000000) return "#FFD700";
+else if(value>=500000) return "#ff4444";
+else if(value>=100000) return "#ff8800";
+else if(value>=10000) return "#00aaff";
+else if(value>=1000) return "#bb66ff";
+else return "#00ff55";
 }
+function updateColor(value){ totalDiv.style.color=getPalierColor(value); }
 
 /* FLASH PALIER */
-function flashPalier(){
+function flashPalier(color){
+totalDiv.style.color=color; // flash prend couleur palier
 totalDiv.classList.add("palierFlash");
-setTimeout(()=>{ totalDiv.classList.remove("palierFlash"); },3000);
+setTimeout(()=>{
+totalDiv.classList.remove("palierFlash");
+updateColor(previousValue); // revient à la couleur normale après flash
+},3000);
 }
 
 /* TEMPS REEL */
@@ -253,9 +256,15 @@ progressRight.style.height=(100-percent*100)+"%";
 
 updateColor(value);
 
+/* PALIERS */
 const paliers=[1000,10000,100000,500000];
-paliers.forEach(p=>{ if(value>=p && previousValue<p){ flashPalier(); } });
+paliers.forEach(p=>{
+if(value>=p && previousValue<p){
+flashPalier(getPalierColor(p));
+}
+});
 
+/* JACKPOT */
 if(value>=1000000 && previousValue<1000000){ megaCelebration(); }
 
 previousValue=value;

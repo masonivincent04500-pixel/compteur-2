@@ -43,12 +43,12 @@ overflow:hidden;
 position:absolute;
 left:0;
 width:100%;
-background:#00ff55;
 transition:height 0.5s;
 }
 
 .left .progress-fill{
 bottom:0;
+height:0%;
 }
 
 .right .progress-fill{
@@ -67,7 +67,7 @@ color:#00ff55;
 text-shadow:
 0 0 10px currentColor,
 0 0 30px currentColor,
-0 0 60px rgba(255,255,255,0.2);
+0 0 60px rgba(255,255,255,0.3);
 transition:all 0.4s;
 }
 
@@ -101,7 +101,7 @@ transform:scale(1.05);
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
+const firebaseConfig={
 apiKey:"AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
 authDomain:"compteur-million-2.firebaseapp.com",
 databaseURL:"https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
@@ -111,18 +111,17 @@ messagingSenderId:"226299332536",
 appId:"1:226299332536:web:4d79be3a4ed0b2ba50714d"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
 
-const totalRef = ref(db,"total_global");
-const campingRef = ref(db,"camping");
+const totalRef=ref(db,"total_global");
+const campingRef=ref(db,"camping");
 
 const totalDiv=document.getElementById("total");
 const progressLeft=document.getElementById("progressLeft");
 const progressRight=document.getElementById("progressRight");
 
 let previousValue=0;
-
 const MAX=1000000;
 
 function getColor(value){
@@ -164,7 +163,10 @@ function updateProgress(value){
 const percent=Math.min(value/MAX,1);
 
 progressLeft.style.height=(percent*100)+"%";
-progressRight.style.height=(percent*100)+"%";
+
+const rightHeight=(1-percent)*100;
+
+progressRight.style.height=rightHeight+"%";
 
 }
 
@@ -181,6 +183,7 @@ progressRight.style.background=color;
 function launchFirework(){
 
 const canvas=document.createElement("canvas");
+
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
@@ -201,14 +204,12 @@ const particles=[];
 for(let i=0;i<80;i++){
 
 particles.push({
-
 x:x,
 y:y,
 dx:(Math.random()-0.5)*8,
 dy:(Math.random()-0.5)*8,
 life:60,
 color:`hsl(${Math.random()*360},100%,50%)`
-
 });
 
 }
@@ -221,7 +222,6 @@ particles.forEach(p=>{
 
 p.x+=p.dx;
 p.y+=p.dy;
-
 p.life--;
 
 ctx.beginPath();
@@ -249,21 +249,23 @@ animate();
 
 function megaCelebration(){
 
-let count=0;
+const start=Date.now();
 
-const interval=setInterval(()=>{
+function loop(){
 
 launchFirework();
 
-count++;
+if(Date.now()-start<15000){
 
-if(count>=15){
+const delay=100+Math.random()*400;
 
-clearInterval(interval);
+setTimeout(loop,delay);
 
 }
 
-},1000);
+}
+
+loop();
 
 }
 
@@ -388,5 +390,3 @@ rightClickCount=0;
 
 </body>
 </html>
-
-

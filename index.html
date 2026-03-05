@@ -22,25 +22,31 @@ background:#000;
 overflow:hidden;
 }
 
+/* CONTENEUR */
+
 .main-container{
 display:flex;
 align-items:center;
 justify-content:center;
 width:100%;
 height:100vh;
+position:relative;
+z-index:2;
 }
+
+/* MONTANT */
 
 #total{
 font-size:18vw;
 font-weight:900;
 color:#00ff55;
 line-height:1;
-transition:transform 0.3s ease,text-shadow 0.3s ease,color 0.5s ease;
+transition:transform .3s ease,text-shadow .3s ease,color .5s ease;
 
 text-shadow:
 0 0 10px currentColor,
 0 0 25px currentColor,
-0 0 50px rgba(255,255,255,0.3);
+0 0 50px rgba(255,255,255,.3);
 }
 
 .flash{
@@ -48,16 +54,26 @@ transform:scale(1.05);
 }
 
 .palierFlash{
-animation:palierFlash 3s;
+animation:palierFlash 3s ease;
 }
 
 @keyframes palierFlash{
 
-0%{filter:brightness(1)}
-50%{filter:brightness(3)}
-100%{filter:brightness(1)}
+0%{transform:scale(1)}
+
+30%{
+transform:scale(1.18);
+text-shadow:
+0 0 40px currentColor,
+0 0 80px currentColor,
+0 0 120px currentColor;
+}
+
+100%{transform:scale(1)}
 
 }
+
+/* BARRES */
 
 .progress-bar{
 
@@ -71,7 +87,7 @@ overflow:hidden;
 
 box-shadow:
 inset 0 0 15px #000,
-0 0 20px rgba(0,255,85,0.25);
+0 0 20px rgba(0,255,85,.25);
 
 }
 
@@ -81,10 +97,8 @@ position:absolute;
 bottom:0;
 width:100%;
 height:0%;
-
 background:linear-gradient(to top,#00ff55,#00ffaa);
-
-transition:height 0.6s ease;
+transition:height .6s ease;
 
 }
 
@@ -95,19 +109,20 @@ bottom:auto;
 
 }
 
+/* CANVAS FEU D ARTIFICE */
+
 canvas{
 position:absolute;
 top:0;
 left:0;
 pointer-events:none;
+z-index:-1;
 }
 
 </style>
 </head>
 
 <body>
-
-<canvas id="fireworks"></canvas>
 
 <div class="main-container">
 
@@ -128,8 +143,9 @@ pointer-events:none;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
+/* FIREBASE */
 
+const firebaseConfig={
 apiKey:"AIzaSyBnTkiUSRgVlD0sLTuV0YV92LWkPWBQAbA",
 authDomain:"compteur-million-2.firebaseapp.com",
 databaseURL:"https://compteur-million-2-default-rtdb.europe-west1.firebasedatabase.app",
@@ -137,7 +153,6 @@ projectId:"compteur-million-2",
 storageBucket:"compteur-million-2.firebasestorage.app",
 messagingSenderId:"226299332536",
 appId:"1:226299332536:web:4d79be3a4ed0b2ba50714d"
-
 };
 
 const app=initializeApp(firebaseConfig);
@@ -155,122 +170,7 @@ const MAX_VALUE=1000000;
 
 let previousValue=0;
 
-/* CANVAS UNIQUE */
-
-const canvas=document.getElementById("fireworks");
-const ctx=canvas.getContext("2d");
-
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-let particles=[];
-
-class Particle{
-
-constructor(x,y,color){
-
-this.x=x;
-this.y=y;
-
-const angle=Math.random()*Math.PI*2;
-const speed=Math.random()*6+2;
-
-this.vx=Math.cos(angle)*speed;
-this.vy=Math.sin(angle)*speed;
-
-this.alpha=1;
-this.color=color;
-this.size=Math.random()*3+2;
-
-}
-
-update(){
-
-this.x+=this.vx;
-this.y+=this.vy;
-
-this.vy+=0.05;
-
-this.alpha-=0.015;
-
-}
-
-draw(){
-
-ctx.globalAlpha=this.alpha;
-ctx.beginPath();
-ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-ctx.fillStyle=this.color;
-ctx.fill();
-
-}
-
-}
-
-function createExplosion(){
-
-const x=Math.random()*canvas.width;
-const y=Math.random()*canvas.height*0.6;
-
-const color=`hsl(${Math.random()*360},100%,60%)`;
-
-for(let i=0;i<70;i++){
-
-particles.push(new Particle(x,y,color));
-
-}
-
-}
-
-function animateFireworks(){
-
-ctx.fillStyle="rgba(0,0,0,0.2)";
-ctx.fillRect(0,0,canvas.width,canvas.height);
-
-particles.forEach((p,index)=>{
-
-p.update();
-p.draw();
-
-if(p.alpha<=0){
-
-particles.splice(index,1);
-
-}
-
-});
-
-requestAnimationFrame(animateFireworks);
-
-}
-
-animateFireworks();
-
-/* FEUX D'ARTIFICE 15 SECONDES */
-
-function megaCelebration(){
-
-let time=0;
-
-function randomExplosion(){
-
-createExplosion();
-
-time+=Math.random()*400+100;
-
-if(time<15000){
-
-setTimeout(randomExplosion,Math.random()*400+100);
-
-}
-
-}
-
-randomExplosion();
-
-}
-
-/* COMPTEUR */
+/* COMPTEUR ANIME */
 
 function animateCounter(start,end,duration=800){
 
@@ -294,59 +194,130 @@ requestAnimationFrame(updateCounter);
 
 }
 
-/* COULEURS PALIERS */
+/* COULEUR SELON PALIER */
 
 function updateColor(value){
 
 if(value>=1000000){
-
 totalDiv.style.color="#FFD700";
-
 }
 
 else if(value>=500000){
-
 totalDiv.style.color="#ff4444";
-
 }
 
 else if(value>=100000){
-
 totalDiv.style.color="#ff8800";
-
 }
 
 else if(value>=10000){
-
 totalDiv.style.color="#00aaff";
-
 }
 
 else if(value>=1000){
-
 totalDiv.style.color="#bb66ff";
-
 }
 
 else{
-
 totalDiv.style.color="#00ff55";
-
 }
 
 }
 
 /* FLASH PALIER */
 
-function flashPalier(){
+function triggerPalierFlash(){
 
 totalDiv.classList.add("palierFlash");
 
 setTimeout(()=>{
-
 totalDiv.classList.remove("palierFlash");
-
 },3000);
+
+}
+
+/* FEU D ARTIFICE ULTRA FLUIDE */
+
+let canvas=document.createElement("canvas");
+document.body.appendChild(canvas);
+
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let particles=[];
+
+function createFirework(){
+
+const x=Math.random()*canvas.width;
+const y=Math.random()*canvas.height*0.6;
+
+for(let i=0;i<60;i++){
+
+particles.push({
+
+x:x,
+y:y,
+
+dx:(Math.random()-.5)*6,
+dy:(Math.random()-.5)*6,
+
+life:60,
+
+color:`hsl(${Math.random()*360},100%,50%)`
+
+});
+
+}
+
+}
+
+function animateFireworks(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+particles.forEach((p,i)=>{
+
+p.x+=p.dx;
+p.y+=p.dy;
+
+p.life--;
+
+ctx.beginPath();
+ctx.arc(p.x,p.y,2,0,Math.PI*2);
+ctx.fillStyle=p.color;
+ctx.fill();
+
+if(p.life<=0)particles.splice(i,1);
+
+});
+
+requestAnimationFrame(animateFireworks);
+
+}
+
+animateFireworks();
+
+/* CELEBRATION 15s */
+
+function megaCelebration(){
+
+const end=Date.now()+15000;
+
+function randomLaunch(){
+
+if(Date.now()>end)return;
+
+createFirework();
+
+const delay=100+Math.random()*400;
+
+setTimeout(randomLaunch,delay);
+
+}
+
+randomLaunch();
 
 }
 
@@ -378,21 +349,15 @@ progressRight.style.height=(100-percent*100)+"%";
 
 updateColor(value);
 
-/* PALIERS */
+/* FLASH PALIER */
 
-const paliers=[1000,10000,100000,500000];
+const paliers=[1000,10000,100000,500000,1000000];
 
 paliers.forEach(p=>{
-
-if(value>=p && previousValue<p){
-
-flashPalier();
-
-}
-
+if(value>=p && previousValue<p)triggerPalierFlash();
 });
 
-/* JACKPOT 1M */
+/* FEU D ARTIFICE AU MILLION */
 
 if(value>=1000000 && previousValue<1000000){
 
@@ -404,7 +369,7 @@ previousValue=value;
 
 });
 
-/* RESET */
+/* RESET DISCRET */
 
 let leftClickCount=0;
 
@@ -423,15 +388,13 @@ leftClickCount=0;
 
 }
 
-}else{
-
-leftClickCount=0;
-
 }
+
+else leftClickCount=0;
 
 });
 
-/* SOUSTRACTION % */
+/* SOUSTRACTION ALEATOIRE */
 
 let rightClickCount=0;
 
@@ -462,6 +425,7 @@ const subtractPerCamping=Math.floor(totalSubtract/12);
 get(campingRef).then(snapshot=>{
 
 const campings=snapshot.val()||{};
+
 const updates={};
 
 let newTotal=0;
@@ -479,6 +443,7 @@ newTotal+=newValue;
 });
 
 update(campingRef,updates);
+
 set(totalRef,newTotal);
 
 });
@@ -487,11 +452,9 @@ set(totalRef,newTotal);
 
 }
 
-}else{
-
-rightClickCount=0;
-
 }
+
+else rightClickCount=0;
 
 });
 

@@ -16,10 +16,12 @@ font-family:"Trebuchet MS",sans-serif;
 body{
 height:100vh;
 display:flex;
+flex-direction:column;
 justify-content:center;
 align-items:center;
 background:#000;
 overflow:hidden;
+position:relative;
 }
 
 /* HALO DE FOND */
@@ -44,10 +46,9 @@ z-index:0;
 display:flex;
 align-items:center;
 justify-content:center;
-width:100%;
-height:100vh;
 position:relative;
 z-index:2;
+flex-direction:column;
 }
 
 /* COMPTEUR */
@@ -98,14 +99,14 @@ transform:scale(1);
 }
 }
 
-/* BARRES */
+/* BARRE HORIZONTALE */
 
 .progress-bar{
-width:40px;
-height:70vh;
+width:60vw;
+height:40px;
 background:#111;
 border-radius:25px;
-margin:0 50px;
+margin-top:40px;
 position:relative;
 overflow:hidden;
 box-shadow:
@@ -115,17 +116,13 @@ inset 0 0 15px #000,
 
 .progress-fill{
 position:absolute;
-bottom:0;
-width:100%;
-height:0%;
-background:linear-gradient(to top,#00ff55,#00ffaa);
-box-shadow:0 0 20px #00ff88;
-transition:height 0.7s ease;
-}
-
-.progress-bar.right .progress-fill{
-bottom:auto;
+left:0;
 top:0;
+width:0%;
+height:100%;
+background:linear-gradient(to right,#00ff55,#00ffaa);
+box-shadow:0 0 20px #00ff88;
+transition:width 0.7s ease;
 }
 
 canvas{
@@ -145,14 +142,10 @@ z-index:0;
 
 <div class="main-container">
 
-<div class="progress-bar left">
-<div id="progressLeft" class="progress-fill"></div>
-</div>
-
 <div id="total">0</div>
 
-<div class="progress-bar right">
-<div id="progressRight" class="progress-fill"></div>
+<div class="progress-bar">
+<div id="progressLeft" class="progress-fill"></div>
 </div>
 
 </div>
@@ -180,7 +173,6 @@ const campingRef=ref(db,"camping");
 
 const totalDiv=document.getElementById("total");
 const progressLeft=document.getElementById("progressLeft");
-const progressRight=document.getElementById("progressRight");
 
 const MAX_VALUE=1000000;
 
@@ -328,8 +320,7 @@ setTimeout(()=>totalDiv.classList.remove("flash"),200);
 
 const percent=Math.min(value/MAX_VALUE,1);
 
-progressLeft.style.height=(percent*100)+"%";
-progressRight.style.height=(100-percent*100)+"%";
+progressLeft.style.width=(percent*100)+"%";
 
 const paliers=[
 {value:1000,color:"#bb66ff"},
@@ -359,82 +350,48 @@ previousValue=value;
 let leftClickCount=0;
 
 document.body.addEventListener("click",e=>{
-
 if(e.clientX<100 && e.clientY<100){
-
 leftClickCount++;
-
 if(leftClickCount>=5){
-
 set(totalRef,0);
 set(campingRef,null);
-
 leftClickCount=0;
-
 }
-
 }else leftClickCount=0;
-
 });
 
-/* SOUSTRACTION */
+/* SOUSTRACTION (bas à gauche) */
 
 let rightClickCount=0;
 
 document.body.addEventListener("click",e=>{
-
-const width=window.innerWidth;
-
-if(e.clientX>width-100 && e.clientY<100){
-
+const height=window.innerHeight;
+if(e.clientX<100 && e.clientY>height-100){
 rightClickCount++;
-
 if(rightClickCount>=5){
-
 rightClickCount=0;
-
 get(totalRef).then(totalSnap=>{
-
 const total=totalSnap.val()||0;
-
 if(total<=0)return;
-
 const percent=0.12+Math.random()*0.04;
-
 const totalSubtract=Math.floor(total*percent);
-
 const subtractPerCamping=Math.floor(totalSubtract/12);
-
 get(campingRef).then(snapshot=>{
-
 const campings=snapshot.val()||{};
 const updates={};
-
 let newTotal=0;
-
 Object.keys(campings).forEach(key=>{
-
 const value=campings[key]||0;
-
 const newValue=Math.max(0,value-subtractPerCamping);
-
 updates[key]=newValue;
-
 newTotal+=newValue;
-
 });
-
 update(campingRef,updates);
 set(totalRef,newTotal);
-
 });
-
 });
-
 }
-
 }else rightClickCount=0;
-
 });
 
 </script>

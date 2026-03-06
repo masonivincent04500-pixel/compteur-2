@@ -2,15 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Cagnotte Globale</title>
+<title>Cagnotte Globale V2.1</title>
 
 <style>
-
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
 font-family:"Trebuchet MS",sans-serif;
+user-select:none; /* Empêche la sélection de texte */
 }
 
 body{
@@ -25,7 +25,6 @@ position:relative;
 }
 
 /* HALO DE FOND */
-
 body::before{
 content:"";
 position:absolute;
@@ -35,7 +34,6 @@ background:radial-gradient(circle at center,rgba(0,255,120,0.08),transparent 70%
 animation:bgPulse 6s ease-in-out infinite;
 z-index:0;
 }
-
 @keyframes bgPulse{
 0%{opacity:0.4;transform:scale(1)}
 50%{opacity:1;transform:scale(1.08)}
@@ -52,7 +50,6 @@ flex-direction:column;
 }
 
 /* COMPTEUR */
-
 #total{
 font-size:18vw;
 font-weight:900;
@@ -68,23 +65,17 @@ text-shadow:
 0 0 120px rgba(255,255,255,0.25);
 animation:idlePulse 3s ease-in-out infinite;
 }
-
 @keyframes idlePulse{
 0%{transform:scale(1)}
 50%{transform:scale(1.02)}
 100%{transform:scale(1)}
 }
-
-.flash{
-transform:scale(1.08);
-}
+.flash{transform:scale(1.08);}
 
 /* FLASH PALIER */
-
 .palierFlash{
 animation:palierFlash 3s forwards;
 }
-
 @keyframes palierFlash{
 0%{
 text-shadow:0 0 10px currentColor,0 0 40px currentColor,0 0 100px currentColor;
@@ -100,7 +91,6 @@ transform:scale(1);
 }
 
 /* BARRE HORIZONTALE */
-
 .progress-bar{
 width:60vw;
 height:40px;
@@ -113,7 +103,6 @@ box-shadow:
 inset 0 0 15px #000,
 0 0 25px rgba(0,255,120,0.3);
 }
-
 .progress-fill{
 position:absolute;
 left:0;
@@ -122,9 +111,10 @@ width:0%;
 height:100%;
 background:linear-gradient(to right,#00ff55,#00ffaa);
 box-shadow:0 0 20px #00ff88;
-transition:width 0.7s ease;
+transition:width 0.7s ease, background 0.5s ease;
 }
 
+/* canvas pour feux d'artifice */
 canvas{
 position:absolute;
 top:0;
@@ -133,6 +123,16 @@ pointer-events:none;
 z-index:0;
 }
 
+/* ZONES INVISIBLES POUR RESET ET SOUSTRACTION */
+#resetZone, #subtractZone{
+position:fixed;
+width:100px;
+height:100px;
+z-index:4;
+cursor:pointer;
+}
+#resetZone{top:0; left:0;}
+#subtractZone{bottom:0; left:0;}
 </style>
 </head>
 
@@ -141,14 +141,15 @@ z-index:0;
 <canvas id="fireworks"></canvas>
 
 <div class="main-container">
-
 <div id="total">0</div>
-
 <div class="progress-bar">
 <div id="progressLeft" class="progress-fill"></div>
 </div>
-
 </div>
+
+<!-- Zones invisibles pour clics -->
+<div id="resetZone"></div>
+<div id="subtractZone"></div>
 
 <script type="module">
 
@@ -175,223 +176,138 @@ const totalDiv=document.getElementById("total");
 const progressLeft=document.getElementById("progressLeft");
 
 const MAX_VALUE=1000000;
-
 let previousValue=0;
 
-/* CANVAS */
-
+/* CANVAS FEUX */
 const canvas=document.getElementById("fireworks");
 const ctx=canvas.getContext("2d");
-
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
-
 let particles=[];
-
 class Particle{
 constructor(x,y,color){
-this.x=x;
-this.y=y;
+this.x=x; this.y=y;
 const angle=Math.random()*Math.PI*2;
 const speed=Math.random()*7+2;
-this.vx=Math.cos(angle)*speed;
-this.vy=Math.sin(angle)*speed;
-this.alpha=1;
-this.color=color;
-this.size=Math.random()*4+2;
+this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed;
+this.alpha=1; this.color=color; this.size=Math.random()*4+2;
 }
-update(){
-this.x+=this.vx;
-this.y+=this.vy;
-this.vy+=0.06;
-this.alpha-=0.015;
+update(){this.x+=this.vx; this.y+=this.vy; this.vy+=0.06; this.alpha-=0.015;}
+draw(){ctx.globalAlpha=this.alpha; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fillStyle=this.color; ctx.fill();}
 }
-draw(){
-ctx.globalAlpha=this.alpha;
-ctx.beginPath();
-ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-ctx.fillStyle=this.color;
-ctx.fill();
-}
-}
-
 function createExplosion(){
 const x=Math.random()*canvas.width;
 const y=Math.random()*canvas.height*0.6;
 const color=`hsl(${Math.random()*360},100%,60%)`;
-for(let i=0;i<80;i++){
-particles.push(new Particle(x,y,color));
+for(let i=0;i<80;i++) particles.push(new Particle(x,y,color));
 }
-}
-
 function animateFireworks(){
 ctx.fillStyle="rgba(0,0,0,0.18)";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 particles.forEach((p,index)=>{
-p.update();
-p.draw();
-if(p.alpha<=0) particles.splice(index,1);
+p.update(); p.draw(); if(p.alpha<=0) particles.splice(index,1);
 });
 requestAnimationFrame(animateFireworks);
 }
-
 animateFireworks();
 
 /* CELEBRATION */
-
 function megaCelebration(){
 let time=0;
 function randomExplosion(){
 createExplosion();
 time+=Math.random()*400+120;
-if(time<15000){
-setTimeout(randomExplosion,Math.random()*400+120);
-}else{
-particles=[];
-ctx.clearRect(0,0,canvas.width,canvas.height);
-}
+if(time<15000) setTimeout(randomExplosion,Math.random()*400+120);
+else{particles=[]; ctx.clearRect(0,0,canvas.width,canvas.height);}
 }
 randomExplosion();
 }
 
 /* COMPTEUR */
-
 function animateCounter(start,end,duration=900){
-const range=end-start;
-const startTime=performance.now();
-
+const range=end-start; const startTime=performance.now();
 function updateCounter(currentTime){
 const elapsed=currentTime-startTime;
 const progress=Math.min(elapsed/duration,1);
-
 const ease=1-Math.pow(1-progress,3);
-
 const value=Math.floor(start+range*ease);
-
 totalDiv.innerText=value.toLocaleString("fr-FR");
-
-if(progress<1)requestAnimationFrame(updateCounter);
+if(progress<1) requestAnimationFrame(updateCounter);
 }
-
 requestAnimationFrame(updateCounter);
 }
 
 /* COULEUR */
-
 function updateColor(value){
-
 if(value>=1000000) totalDiv.style.color="#FFD700";
 else if(value>=500000) totalDiv.style.color="#ff4444";
 else if(value>=100000) totalDiv.style.color="#ff8800";
 else if(value>=10000) totalDiv.style.color="#00aaff";
 else if(value>=1000) totalDiv.style.color="#bb66ff";
 else totalDiv.style.color="#00ff55";
-
 }
 
 /* FLASH PALIER */
-
 function flashPalier(color){
-
 totalDiv.style.color=color;
 totalDiv.classList.add("palierFlash");
-
 setTimeout(()=>{
 totalDiv.classList.remove("palierFlash");
 updateColor(previousValue);
 },3000);
-
 }
 
 /* TEMPS REEL */
-
 onValue(totalRef,snapshot=>{
-
 const value=snapshot.val()||0;
-
 animateCounter(previousValue,value);
-
-if(value>previousValue){
-
-totalDiv.classList.add("flash");
-setTimeout(()=>totalDiv.classList.remove("flash"),200);
-
-}
-
+if(value>previousValue){totalDiv.classList.add("flash"); setTimeout(()=>totalDiv.classList.remove("flash"),200);}
 const percent=Math.min(value/MAX_VALUE,1);
-
 progressLeft.style.width=(percent*100)+"%";
-
 const paliers=[
 {value:1000,color:"#bb66ff"},
 {value:10000,color:"#00aaff"},
 {value:100000,color:"#ff8800"},
 {value:500000,color:"#ff4444"}
 ];
-
-paliers.forEach(p=>{
-if(value>=p.value && previousValue<p.value){
-flashPalier(p.color);
-}
-});
-
-if(value>=1000000 && previousValue<1000000){
-megaCelebration();
-}
-
+paliers.forEach(p=>{if(value>=p.value && previousValue<p.value) flashPalier(p.color);});
+if(value>=1000000 && previousValue<1000000) megaCelebration();
 updateColor(value);
-
 previousValue=value;
-
 });
 
-/* RESET */
-
-let leftClickCount=0;
-
-document.body.addEventListener("click",e=>{
-if(e.clientX<100 && e.clientY<100){
-leftClickCount++;
-if(leftClickCount>=5){
-set(totalRef,0);
-set(campingRef,null);
-leftClickCount=0;
-}
-}else leftClickCount=0;
+/* RESET via zone */
+const resetZone=document.getElementById("resetZone");
+let resetClickCount=0;
+resetZone.addEventListener("click",()=>{
+resetClickCount++;
+if(resetClickCount>=5){set(totalRef,0); set(campingRef,null); resetClickCount=0;}
 });
 
-/* SOUSTRACTION (bas à gauche) */
-
-let rightClickCount=0;
-
-document.body.addEventListener("click",e=>{
-const height=window.innerHeight;
-if(e.clientX<100 && e.clientY>height-100){
-rightClickCount++;
-if(rightClickCount>=5){
-rightClickCount=0;
+/* SOUSTRACTION via zone */
+const subtractZone=document.getElementById("subtractZone");
+let subtractClickCount=0;
+subtractZone.addEventListener("click",()=>{
+subtractClickCount++;
+if(subtractClickCount>=5){
+subtractClickCount=0;
 get(totalRef).then(totalSnap=>{
-const total=totalSnap.val()||0;
-if(total<=0)return;
+const total=totalSnap.val()||0; if(total<=0) return;
 const percent=0.12+Math.random()*0.04;
 const totalSubtract=Math.floor(total*percent);
 const subtractPerCamping=Math.floor(totalSubtract/12);
 get(campingRef).then(snapshot=>{
 const campings=snapshot.val()||{};
-const updates={};
-let newTotal=0;
+const updates={}; let newTotal=0;
 Object.keys(campings).forEach(key=>{
 const value=campings[key]||0;
 const newValue=Math.max(0,value-subtractPerCamping);
-updates[key]=newValue;
-newTotal+=newValue;
+updates[key]=newValue; newTotal+=newValue;
 });
-update(campingRef,updates);
-set(totalRef,newTotal);
+update(campingRef,updates); set(totalRef,newTotal);
 });
 });
 }
-}else rightClickCount=0;
 });
 
 </script>
